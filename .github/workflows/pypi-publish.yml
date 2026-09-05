@@ -1,9 +1,8 @@
 name: Publish
 
+# 本 fork 沿用上游包名 nonebot-plugin-skland，PyPI 包名已被上游占用，
+# push tag 不应自动向 PyPI 发布（会与上游冲突）。需要手动发 Python 包时才触发。
 on:
-  push:
-    tags:
-      - '*'
   workflow_dispatch:
 
 jobs:
