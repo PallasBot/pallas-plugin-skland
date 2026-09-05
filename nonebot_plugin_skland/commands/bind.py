@@ -25,6 +25,8 @@ from ..db_handler import delete_user, delete_characters, delete_user_all_gacha_r
 _AVATAR_MAX_BYTES = 2 * 1024 * 1024
 _AVATAR_MAX_PIXELS = 4_000_000
 
+_BIND_GUIDE_LINK = "https://docs.qq.com/doc/p/2f705965caafb3ef342d4a979811ff3960bb3c17"
+
 
 def _is_supported_avatar_url(avatar_url: str) -> bool:
     try:
@@ -139,6 +141,15 @@ async def bind_handler(
     if not msg_target.private:
         send_reaction(user_session, "unmatch")
         await UniMessage("绑定指令只允许在私聊中使用").finish(at_sender=True)
+
+    if not token.available:
+        send_reaction(user_session, "processing")
+        await UniMessage(
+            "**绑定森空岛账号**\n\n"
+            "- 获取 token 或 cred 的教程：\n"
+            f"{_BIND_GUIDE_LINK}\n\n"
+            "- 或发送 **`扫码绑定`**，用森空岛 App 扫码即可直接绑定，无需手动填写 token。"
+        ).finish(at_sender=True)
 
     if user := await session.get(SkUser, user_session.user_id):
         if result.find("bind.update"):

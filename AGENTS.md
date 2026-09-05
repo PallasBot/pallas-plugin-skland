@@ -263,6 +263,11 @@ class Config(BaseModel):
 - 登录二维码保持原生黑白点阵、M 级纠错和 4 模块静区，不做缩放或头像覆盖；Pillow 只在二维码外合成模糊头像背景、暗色遮罩、白色面板与圆形头像徽标。
 - 群聊发送时回复原消息并 @ 发起者，私聊不添加无意义的 @；二维码仍在约 100 秒后撤回，后续扫码轮询与账号绑定流程不变。
 
+### token 绑定引导
+
+- `matcher.py` 中 `bind` 子命令的 `token` 参数为可选，使 `森空岛绑定`/`skland bind` 不带参数也能进入 handler。
+- `bind_handler` 在未提供 token 时（`token.available` 为假）发送一次绑定引导：给出获取 token/cred 的教程链接，并提示可用 `扫码绑定` 直接扫码，避免新手触发无参数命令后静默无响应。
+
 ### 玩家角色卡短期缓存
 
 - `player_data.py` 的 `ArkCardDataSource` 为 `commands/card.py`、`commands/box.py` 和 `commands/gacha.py` 统一缓存无副作用的 `ArkCard` API 读取；`get_ark_card()` 在每个命令请求上下文独立执行 token 刷新。

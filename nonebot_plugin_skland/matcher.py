@@ -24,7 +24,7 @@ skland_command = Alconna(
     Args["target?#目标", At | int],
     Subcommand(
         "-b|--bind|bind",
-        Args["token", str, Field(completion=lambda: "请输入 token 或 cred 完成绑定")],
+        Args["token?#token", str, Field(completion=lambda: "请输入 token 或 cred 完成绑定")],
         Option("-u|--update|update", help_text="更新绑定的 token 或 cred"),
         help_text="绑定森空岛账号",
     ),
