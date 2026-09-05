@@ -20,3 +20,15 @@ def test_config_fields_have_chinese_descriptions():
     for name, f in fields.items():
         assert f.description, f"字段 {name} 缺少 description"
         assert any("\u4e00" <= c <= "\u9fff" for c in f.description), f"字段 {name} description 非中文"
+
+
+def test_config_has_local_background_path_fields():
+    """有独立的本地背景路径配置项，默认空。"""
+    from nonebot_plugin_skland.config import Config, ScopedConfig
+
+    cfg = Config()
+    assert cfg.skland.background_source_local_path == ""
+    assert cfg.skland.rogue_background_source_local_path == ""
+    names = set(ScopedConfig.model_fields.keys())
+    assert "background_source_local_path" in names
+    assert "rogue_background_source_local_path" in names

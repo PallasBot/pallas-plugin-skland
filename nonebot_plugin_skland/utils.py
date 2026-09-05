@@ -194,6 +194,9 @@ async def get_background_image(game_type: Literal["ark", "endfield"] = "ark") ->
         random_dir = RES_DIR / "images" / "background"
         lolicon_tag = "arknights"
 
+    if config.background_source_local_path:
+        return CustomSource(uri=config.background_source_local_path).to_uri()
+
     match config.background_source:
         case "default":
             background_image = default_background.as_posix()
@@ -219,6 +222,8 @@ async def get_rogue_background_image(rogue_id: str) -> str | Url:
         "rogue_5": RES_DIR / "images" / "background" / "rogue" / "pic_rogue_5_KV1.png",
         "rogue_6": RES_DIR / "images" / "background" / "rogue" / "pic_rogue_6_kv1.png",
     }
+    if config.rogue_background_source_local_path:
+        return CustomSource(uri=config.rogue_background_source_local_path).to_uri()
     match config.rogue_background_source:
         case "default":
             background_image = default_background.as_posix()

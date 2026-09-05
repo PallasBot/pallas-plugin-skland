@@ -85,6 +85,11 @@ class ScopedConfig(BaseModel):
         description="背景图片来源：default 内置 / Lolicon 网络随机 / random 本地随机；也支持 {uri: 图片地址} 自定义。",
         json_schema_extra=_ui("渲染", 15),
     )
+    background_source_local_path: str = Field(
+        default="",
+        description="本地背景图片路径（单张图或目录，目录则随机选一张）。填此值后优先使用，背景来源不再生效；相对路径以插件数据目录为根，可用绝对路径。",
+        json_schema_extra=_ui("渲染", 16),
+    )
     endfield_background_simple: bool = Field(
         default=False,
         description="终末地角色卡片是否使用简化背景（纯色），减少图片体积与加载时间。",
@@ -96,6 +101,11 @@ class ScopedConfig(BaseModel):
             "肉鸽战绩背景来源：rogue 主题套图 / default 默认 / Lolicon 网络随机；也支持 {uri: 图片地址} 自定义。"
         ),
         json_schema_extra=_ui("渲染", 25),
+    )
+    rogue_background_source_local_path: str = Field(
+        default="",
+        description="本地肉鸽战绩背景图片路径（单张图或目录，目录则随机选一张）。填此值后优先使用，肉鸽来源不再生效；相对路径以插件数据目录为根，可用绝对路径。",
+        json_schema_extra=_ui("渲染", 26),
     )
     argot_expire: int = Field(
         default=300,
