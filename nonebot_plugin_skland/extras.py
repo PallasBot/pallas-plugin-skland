@@ -1,4 +1,13 @@
 extra_data = {
+    "command_permissions": [
+        {"id": "skland.sign_all", "label": "全体签到", "default": "superuser"},
+        {"id": "skland.sign_all_status", "label": "全体签到详情", "default": "superuser"},
+        {"id": "skland.efsign_all", "label": "终末地全体签到", "default": "superuser"},
+        {"id": "skland.efsign_all_status", "label": "终末地全体签到详情", "default": "superuser"},
+        {"id": "skland.char_update_all", "label": "全体角色更新", "default": "superuser"},
+        {"id": "skland.sync", "label": "资源更新", "default": "superuser"},
+        {"id": "skland.shortcut", "label": "自定义指令", "default": "superuser"},
+    ],
     "menu_data": [
         {
             "func": "森空岛绑定",
@@ -96,6 +105,8 @@ extra_data = {
             "func": "全体签到",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**全体签到** | `skland arksign all`",
+            "help_audience": "superuser",
+            "command_permission": "skland.sign_all",
             "brief_des": "签到所有绑定到bot的明日方舟账号。",
             "detail_des": (
                 "- **全体签到**\n\n"
@@ -110,6 +121,8 @@ extra_data = {
             "func": "全体签到详情",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**全体签到详情** | `skland arksign status --all`",
+            "help_audience": "superuser",
+            "command_permission": "skland.sign_all_status",
             "brief_des": "查看所有绑定角色的签到状态。",
             "detail_des": (
                 "- **全体签到详情**\n\n"
@@ -158,6 +171,8 @@ extra_data = {
             "func": "终末地全体签到",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**终末地全体签到** | `skland efsign all`",
+            "help_audience": "superuser",
+            "command_permission": "skland.efsign_all",
             "brief_des": "签到所有绑定到bot的终末地账号。",
             "detail_des": (
                 "- **终末地全体签到**\n\n"
@@ -172,6 +187,8 @@ extra_data = {
             "func": "终末地全体签到详情",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**终末地全体签到详情** | `skland efsign status --all`",
+            "help_audience": "superuser",
+            "command_permission": "skland.efsign_all_status",
             "brief_des": "查看所有绑定角色的终末地签到状态。",
             "detail_des": (
                 "- **终末地全体签到详情**\n\n"
@@ -344,6 +361,8 @@ extra_data = {
             "func": "全体角色更新",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**全体角色更新** | `skland char update --all`",
+            "help_audience": "superuser",
+            "command_permission": "skland.char_update_all",
             "brief_des": "更新所有绑定用户的角色信息。",
             "detail_des": (
                 "-  **全体角色更新**\n\n"
@@ -359,6 +378,8 @@ extra_data = {
             "func": "资源更新",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**资源更新** | `skland sync`",
+            "help_audience": "superuser",
+            "command_permission": "skland.sync",
             "brief_des": "更新游戏资源（图片和数据）。",
             "detail_des": (
                 "-  **资源更新**\n\n"
@@ -409,6 +430,8 @@ extra_data = {
             "func": "自定义指令",
             "trigger_method": "**超级用户**",
             "trigger_condition": "`/skland --shortcut`",
+            "help_audience": "superuser",
+            "command_permission": "skland.shortcut",
             "brief_des": "添加自定义指令，使用方法请看详情。",
             "detail_des": (
                 "#### 🪄 自定义快捷指令\n\n"

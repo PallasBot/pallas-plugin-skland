@@ -10,6 +10,11 @@
 
 _✨ 通过森空岛查询游戏数据 ✨_
 
+> **Pallas 适配 fork**
+> 本仓库是 Pallas 团队对 [FrostN0v0/nonebot-plugin-skland](https://github.com/FrostN0v0/nonebot-plugin-skland) 的
+> [MIT 许可](LICENSE) fork，用于接入 Pallas 帮助菜单与命令权限约定。
+> 感谢原作者 FrostN0v0 的出色工作；功能与上游保持同步。
+
 <a href="./LICENSE">
     <img src="https://img.shields.io/github/license/FrostN0v0/nonebot-plugin-skland.svg" alt="license">
 </a>

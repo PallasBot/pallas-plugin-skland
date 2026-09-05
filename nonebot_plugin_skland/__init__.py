@@ -37,7 +37,7 @@ __plugin_meta__ = PluginMetadata(
     usage="skland --help",
     config=Config,
     type="application",
-    homepage="https://github.com/FrostN0v0/nonebot-plugin-skland",
+    homepage="https://github.com/PallasBot/pallas-plugin-skland",
     supported_adapters=inherit_supported_adapters("nonebot_plugin_alconna"),
     extra={
         "author": "FrostN0v0 <1614591760@qq.com>",
