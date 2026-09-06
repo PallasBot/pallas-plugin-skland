@@ -11,6 +11,7 @@ extra_data = {
     "menu_data": [
         {
             "func": "森空岛绑定",
+            "group": "账号与绑定",
             "trigger_method": "私聊",
             "trigger_condition": "**森空岛绑定** | `skland bind`",
             "brief_des": "森空岛绑定 <token|cred>",
@@ -26,6 +27,7 @@ extra_data = {
         },
         {
             "func": "扫码绑定",
+            "group": "账号与绑定",
             "trigger_method": "无限制",
             "trigger_condition": "**扫码绑定** | `skland qrcode`",
             "brief_des": "森空岛扫码绑定",
@@ -41,6 +43,7 @@ extra_data = {
         },
         {
             "func": "森空岛解绑",
+            "group": "账号与绑定",
             "trigger_method": "无限制",
             "trigger_condition": "**森空岛解绑** | `skland unbind`",
             "brief_des": "解绑森空岛账号",
@@ -56,6 +59,7 @@ extra_data = {
         },
         {
             "func": "skland",
+            "group": "明日方舟",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**skland**",
             "brief_des": "查询明日方舟角色信息卡片",
@@ -69,6 +73,7 @@ extra_data = {
         },
         {
             "func": "明日方舟签到",
+            "group": "明日方舟",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**明日方舟签到** | `skland arksign sign --all`",
             "brief_des": "签到绑定的明日方舟账号。",
@@ -89,6 +94,7 @@ extra_data = {
         },
         {
             "func": "签到详情",
+            "group": "明日方舟",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**签到详情** | `skland arksign status`",
             "brief_des": "查看绑定角色的自动签到状态。",
@@ -103,6 +109,7 @@ extra_data = {
         },
         {
             "func": "全体签到",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**全体签到** | `skland arksign all`",
             "help_audience": "superuser",
@@ -119,6 +126,7 @@ extra_data = {
         },
         {
             "func": "全体签到详情",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**全体签到详情** | `skland arksign status --all`",
             "help_audience": "superuser",
@@ -135,6 +143,7 @@ extra_data = {
         },
         {
             "func": "终末地签到",
+            "group": "终末地",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**终末地签到** | `skland efsign sign --all`",
             "brief_des": "签到绑定的终末地账号。",
@@ -155,6 +164,7 @@ extra_data = {
         },
         {
             "func": "终末地签到详情",
+            "group": "终末地",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**终末地签到详情** | `skland efsign status`",
             "brief_des": "查看绑定角色的终末地自动签到状态。",
@@ -169,6 +179,7 @@ extra_data = {
         },
         {
             "func": "终末地全体签到",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**终末地全体签到** | `skland efsign all`",
             "help_audience": "superuser",
@@ -185,6 +196,7 @@ extra_data = {
         },
         {
             "func": "终末地全体签到详情",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**终末地全体签到详情** | `skland efsign status --all`",
             "help_audience": "superuser",
@@ -201,6 +213,7 @@ extra_data = {
         },
         {
             "func": "终末地角色卡片",
+            "group": "终末地",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**ef** | `skland efcard`",
             "brief_des": "查询终末地角色信息卡片。",
@@ -218,6 +231,7 @@ extra_data = {
         },
         {
             "func": "<傀影|水月|萨米|萨卡兹|界园|树海>肉鸽",
+            "group": "明日方舟",
             "trigger_method": "**无限制**",
             "trigger_condition": "**<傀影|水月|萨米|萨卡兹|界园|树海>肉鸽** | `skland rogue --topic <主题>`",
             "brief_des": "查询指定主题的肉鸽战绩。",
@@ -233,6 +247,7 @@ extra_data = {
         },
         {
             "func": "战绩详情",
+            "group": "明日方舟",
             "trigger_method": "**回复一条战绩图片消息**",
             "trigger_condition": "**战绩详情** | `skland rginfo <id>`",
             "brief_des": "查询单局肉鸽战绩详情。",
@@ -255,6 +270,7 @@ extra_data = {
         },
         {
             "func": "方舟抽卡记录",
+            "group": "明日方舟",
             "trigger_method": "**无限制**",
             "trigger_condition": "**方舟抽卡记录** | `skland gacha`",
             "brief_des": "查询绑定到bot的明日方舟账号的抽卡记录。",
@@ -269,6 +285,7 @@ extra_data = {
         },
         {
             "func": "方舟干员",
+            "group": "明日方舟",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**方舟干员** | `skland box`",
             "brief_des": "使用中文筛选词查询持有干员、未拥有干员或完整图鉴。",
@@ -296,6 +313,7 @@ extra_data = {
         },
         {
             "func": "终末地抽卡记录",
+            "group": "终末地",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地抽卡记录** | `skland efgacha`",
             "brief_des": "查询绑定到bot的终末地账号的抽卡记录。",
@@ -313,6 +331,7 @@ extra_data = {
         },
         {
             "func": "终末地抽卡更新",
+            "group": "终末地",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地抽卡更新** | `skland efgacha -u`",
             "brief_des": "从接口拉取最新终末地抽卡记录并更新数据库。",
@@ -330,6 +349,7 @@ extra_data = {
         },
         {
             "func": "导入抽卡记录",
+            "group": "明日方舟",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**导入抽卡记录** | `skland import`",
             "brief_des": "导入小黑盒明日方舟抽卡记录。",
@@ -345,6 +365,7 @@ extra_data = {
         },
         {
             "func": "角色更新",
+            "group": "账号与绑定",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**角色更新** | `skland char update`",
             "brief_des": "同步森空岛绑定的游戏角色信息。",
@@ -359,6 +380,7 @@ extra_data = {
         },
         {
             "func": "全体角色更新",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**全体角色更新** | `skland char update --all`",
             "help_audience": "superuser",
@@ -376,6 +398,7 @@ extra_data = {
         },
         {
             "func": "资源更新",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "**资源更新** | `skland sync`",
             "help_audience": "superuser",
@@ -415,6 +438,7 @@ extra_data = {
         },
         {
             "func": "暗语",
+            "group": "其他",
             "trigger_method": "**回复一条该插件渲染的图片消息**",
             "trigger_condition": "**background** | **clue**",
             "brief_des": "获取暗语消息。",
@@ -428,6 +452,7 @@ extra_data = {
         },
         {
             "func": "自定义指令",
+            "group": "管理",
             "trigger_method": "**超级用户**",
             "trigger_condition": "`/skland --shortcut`",
             "help_audience": "superuser",
