@@ -26,6 +26,36 @@ def test_plugin_defaults_to_tool_help_group() -> None:
     assert _metadata_extra()["help_tag"] == "tool"
 
 
+def test_command_menu_groups_are_preserved() -> None:
+    assert [item["group"] for item in _menu_data()] == [
+        "账号与绑定",
+        "账号与绑定",
+        "账号与绑定",
+        "明日方舟",
+        "明日方舟",
+        "明日方舟",
+        "管理",
+        "管理",
+        "终末地",
+        "终末地",
+        "管理",
+        "管理",
+        "终末地",
+        "明日方舟",
+        "明日方舟",
+        "明日方舟",
+        "明日方舟",
+        "终末地",
+        "终末地",
+        "明日方舟",
+        "账号与绑定",
+        "管理",
+        "管理",
+        "其他",
+        "管理",
+    ]
+
+
 def test_command_permissions_cover_help_menu() -> None:
     permissions = {row["id"]: row for row in _metadata_extra()["command_permissions"]}
     menu = _menu_data()

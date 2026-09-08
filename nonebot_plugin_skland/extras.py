@@ -2,6 +2,7 @@ extra_data = {
     "menu_data": [
         {
             "func": "森空岛绑定",
+            "group": "账号与绑定",
             "command_permission": "skland.bind",
             "trigger_method": "私聊",
             "trigger_condition": "**森空岛绑定** | `skland bind`",
@@ -20,6 +21,7 @@ extra_data = {
         },
         {
             "func": "扫码绑定",
+            "group": "账号与绑定",
             "command_permission": "skland.qrcode",
             "trigger_method": "无限制",
             "trigger_condition": "**扫码绑定** | `skland qrcode`",
@@ -36,6 +38,7 @@ extra_data = {
         },
         {
             "func": "森空岛解绑",
+            "group": "账号与绑定",
             "command_permission": "skland.unbind",
             "trigger_method": "无限制",
             "trigger_condition": "**森空岛解绑** | `skland unbind`",
@@ -51,6 +54,7 @@ extra_data = {
         },
         {
             "func": "skland",
+            "group": "明日方舟",
             "command_permission": "skland.card",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**skland**",
@@ -68,6 +72,7 @@ extra_data = {
         },
         {
             "func": "明日方舟签到",
+            "group": "明日方舟",
             "command_permission": "skland.arksign.sign",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**明日方舟签到** | `skland arksign sign --all`",
@@ -90,6 +95,7 @@ extra_data = {
         },
         {
             "func": "签到详情",
+            "group": "明日方舟",
             "command_permission": "skland.arksign.status",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**签到详情** | `skland arksign status`",
@@ -105,6 +111,7 @@ extra_data = {
         },
         {
             "func": "全体签到",
+            "group": "管理",
             "command_permission": "skland.sign_all",
             "trigger_method": "**无限制**",
             "trigger_condition": "**全体签到** | `skland arksign all`",
@@ -120,6 +127,7 @@ extra_data = {
         },
         {
             "func": "全体签到详情",
+            "group": "管理",
             "command_permission": "skland.sign_all_status",
             "trigger_method": "**无限制**",
             "trigger_condition": "**全体签到详情** | `skland arksign status --all`",
@@ -135,6 +143,7 @@ extra_data = {
         },
         {
             "func": "终末地签到",
+            "group": "终末地",
             "command_permission": "skland.efsign.sign",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**终末地签到** | `skland efsign sign --all`",
@@ -157,6 +166,7 @@ extra_data = {
         },
         {
             "func": "终末地签到详情",
+            "group": "终末地",
             "command_permission": "skland.efsign.status",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**终末地签到详情** | `skland efsign status`",
@@ -172,6 +182,7 @@ extra_data = {
         },
         {
             "func": "终末地全体签到",
+            "group": "管理",
             "command_permission": "skland.efsign_all",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地全体签到** | `skland efsign all`",
@@ -187,6 +198,7 @@ extra_data = {
         },
         {
             "func": "终末地全体签到详情",
+            "group": "管理",
             "command_permission": "skland.efsign_all_status",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地全体签到详情** | `skland efsign status --all`",
@@ -202,6 +214,7 @@ extra_data = {
         },
         {
             "func": "终末地角色卡片",
+            "group": "终末地",
             "command_permission": "skland.efcard",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**ef** | `skland efcard`",
@@ -222,6 +235,7 @@ extra_data = {
         },
         {
             "func": "<傀影|水月|萨米|萨卡兹|界园|树海>肉鸽",
+            "group": "明日方舟",
             "command_permission": "skland.rogue",
             "trigger_method": "**无限制**",
             "trigger_condition": "**<傀影|水月|萨米|萨卡兹|界园|树海>肉鸽** | `skland rogue --topic <主题>`",
@@ -238,6 +252,7 @@ extra_data = {
         },
         {
             "func": "战绩详情",
+            "group": "明日方舟",
             "command_permission": "skland.rginfo",
             "trigger_method": "**回复一条战绩图片消息或使用 -r 选角**",
             "trigger_condition": "**战绩详情** | `skland rginfo <id>`",
@@ -261,6 +276,7 @@ extra_data = {
         },
         {
             "func": "方舟抽卡记录",
+            "group": "明日方舟",
             "command_permission": "skland.gacha",
             "trigger_method": "**无限制**",
             "trigger_condition": "**方舟抽卡记录** | `skland gacha`",
@@ -276,6 +292,7 @@ extra_data = {
         },
         {
             "func": "方舟干员",
+            "group": "明日方舟",
             "command_permission": "skland.box",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**方舟干员** | `skland box`",
@@ -305,6 +322,7 @@ extra_data = {
         },
         {
             "func": "终末地抽卡记录",
+            "group": "终末地",
             "command_permission": "skland.efgacha",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地抽卡记录** | `skland efgacha`",
@@ -323,6 +341,7 @@ extra_data = {
         },
         {
             "func": "终末地抽卡更新",
+            "group": "终末地",
             "command_permission": "skland.efgacha",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地抽卡更新** | `skland efgacha -u`",
@@ -341,6 +360,7 @@ extra_data = {
         },
         {
             "func": "导入抽卡记录",
+            "group": "明日方舟",
             "command_permission": "skland.import",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**导入抽卡记录** | `skland import`",
@@ -357,6 +377,7 @@ extra_data = {
         },
         {
             "func": "账号角色管理",
+            "group": "账号与绑定",
             "command_permission": "skland.char",
             "trigger_method": "**已绑定用户**",
             "trigger_condition": "**森空岛角色** | **切换方舟角色** | **切换终末地角色** | `sk char` | **角色更新**",
@@ -377,6 +398,7 @@ extra_data = {
         },
         {
             "func": "全体角色更新",
+            "group": "管理",
             "command_permission": "skland.char_update_all",
             "trigger_method": "**无限制**",
             "trigger_condition": "**全体角色更新** | `skland char update --all`",
@@ -393,6 +415,7 @@ extra_data = {
         },
         {
             "func": "资源更新",
+            "group": "管理",
             "command_permission": "skland.sync",
             "trigger_method": "**无限制**",
             "trigger_condition": "**资源更新** | `skland sync`",
@@ -431,6 +454,7 @@ extra_data = {
         },
         {
             "func": "暗语",
+            "group": "其他",
             "trigger_method": "**回复一条该插件渲染的图片消息**",
             "trigger_condition": "**background** | **clue**",
             "brief_des": "获取暗语消息。",
@@ -444,6 +468,7 @@ extra_data = {
         },
         {
             "func": "自定义指令",
+            "group": "管理",
             "command_permission": "skland.shortcut",
             "trigger_method": "**无限制**",
             "trigger_condition": "`/skland --shortcut`",
