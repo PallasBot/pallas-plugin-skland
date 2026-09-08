@@ -1,26 +1,20 @@
 """资源同步命令"""
 
 from nonebot import logger
-from nonebot.params import Depends
-from nonebot.permission import SuperUser
 from nonebot_plugin_user import UserSession
 from nonebot_plugin_alconna import Arparma, UniMessage
 
 from ..exception import RequestException
-from ..utils import send_reaction, download_img_resource
+from ..utils.message import send_reaction
+from ..download import download_img_resource
 from ..data_source import gacha_table_data, ef_gacha_pool_data
 
 
 async def sync_handler(
     user_session: UserSession,
     result: Arparma,
-    is_superuser: bool = Depends(SuperUser()),
 ):
     """同步游戏资源"""
-    if not is_superuser:
-        send_reaction(user_session, "unmatch")
-        await UniMessage.text("该指令仅超管可用").finish()
-
     force_update = result.find("sync.force")
     update_img = result.find("sync.img")
     update_data = result.find("sync.data")
@@ -39,7 +33,6 @@ async def sync_handler(
                 download_result = await download_img_resource(
                     force=force_update,
                     update=update_existing,
-                    user_session=None,
                 )
                 if download_result.version is None:
                     messages.append("📦 图片资源已是最新版本")

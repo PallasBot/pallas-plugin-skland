@@ -15,7 +15,7 @@
 
 <body>
   <div class="relative w-176.5 h-auto bg-cover bg-center bg-no-repeat" {% if simple_bg_enabled %}
-    style="background-color: #1a1a1a" {% else %} style="background-image: url({{ background_image }})" {% endif %}>
+    style="background-color: #1a1a1a" {% else %} style="background-image: url('{{ background_image }}')" {% endif %}>
 
     {% if simple_bg_enabled %}
     {# Simple模式：上半部分背景 - simple_bg底层 + simple_bg_top顶层（自适应高度） #}

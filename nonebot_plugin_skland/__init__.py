@@ -6,8 +6,6 @@ nonebot-plugin-skland
 
 from nonebot import require
 from nonebot.adapters import Bot
-from nonebot.params import Depends
-from nonebot.permission import SuperUser
 from nonebot.plugin import PluginMetadata, inherit_supported_adapters
 
 require("nonebot_plugin_orm")
@@ -29,7 +27,6 @@ from .config import Config
 from .matcher import skland
 from .extras import extra_data
 from . import tasks as tasks  # noqa: F401
-from .commands.card import check_user_character as check_user_character
 
 __plugin_meta__ = PluginMetadata(
     name="森空岛",
@@ -42,17 +39,45 @@ __plugin_meta__ = PluginMetadata(
     extra={
         "author": "FrostN0v0 <1614591760@qq.com>",
         "version": "0.7.3",
+        "help_tag": "tool",
+        "command_permissions": [
+            {"id": "skland.bind", "label": "绑定森空岛账号", "default": "everyone"},
+            {"id": "skland.qrcode", "label": "扫码绑定森空岛账号", "default": "everyone"},
+            {"id": "skland.unbind", "label": "解绑森空岛账号", "default": "everyone"},
+            {"id": "skland.card", "label": "明日方舟角色卡片", "default": "everyone"},
+            {"id": "skland.arksign.sign", "label": "明日方舟签到", "default": "everyone"},
+            {"id": "skland.arksign.status", "label": "明日方舟签到详情", "default": "everyone"},
+            {"id": "skland.sign_all", "label": "全体签到", "default": "everyone"},
+            {"id": "skland.sign_all_status", "label": "全体签到详情", "default": "everyone"},
+            {"id": "skland.efsign.sign", "label": "终末地签到", "default": "everyone"},
+            {"id": "skland.efsign.status", "label": "终末地签到详情", "default": "everyone"},
+            {"id": "skland.efsign_all", "label": "终末地全体签到", "default": "everyone"},
+            {"id": "skland.efsign_all_status", "label": "终末地全体签到详情", "default": "everyone"},
+            {"id": "skland.efcard", "label": "终末地角色卡片", "default": "everyone"},
+            {"id": "skland.rogue", "label": "肉鸽战绩查询", "default": "everyone"},
+            {"id": "skland.rginfo", "label": "肉鸽战绩详情", "default": "everyone"},
+            {"id": "skland.gacha", "label": "明日方舟抽卡记录", "default": "everyone"},
+            {"id": "skland.import", "label": "导入抽卡记录", "default": "everyone"},
+            {"id": "skland.box", "label": "方舟干员查询", "default": "everyone"},
+            {"id": "skland.efgacha", "label": "终末地抽卡记录", "default": "everyone"},
+            {"id": "skland.char", "label": "账号角色管理", "default": "everyone"},
+            {"id": "skland.char_update_all", "label": "全体角色更新", "default": "everyone"},
+            {"id": "skland.sync", "label": "资源更新", "default": "everyone"},
+            {"id": "skland.shortcut", "label": "自定义指令", "default": "everyone"},
+        ],
     },
 )
 __plugin_meta__.extra.update(extra_data)
 
 
-@skland.assign("$main")
-async def _(session: async_scoped_session, user_session: UserSession, target: Match[At | int]):
+@skland.assign("role", or_not=True)
+async def _(session: async_scoped_session, user_session: UserSession, target: Match[At | int], result: Arparma):
     """角色卡片查询"""
     from .commands.card import card_handler
 
-    await card_handler(session, user_session, target)
+    if result.subcommands:
+        await skland.finish("请将 -r/--role 放在需要选角的具体子命令后使用")
+    await card_handler(session, user_session, target, role_index=result.query("role.role_index"))
 
 
 @skland.assign("bind")
@@ -92,13 +117,12 @@ async def _(
 async def _(
     user_session: UserSession,
     session: async_scoped_session,
-    uid: Match[str],
     result: Arparma,
 ):
     """明日方舟森空岛签到"""
     from .commands.arksign import arksign_sign_handler
 
-    await arksign_sign_handler(user_session, session, uid, result)
+    await arksign_sign_handler(user_session, session, result.query("arksign.sign.role.role_index"), result)
 
 
 @skland.assign("arksign.status")
@@ -106,13 +130,14 @@ async def arksign_status(
     user_session: UserSession,
     session: async_scoped_session,
     bot: Bot,
-    result: Arparma | bool,
-    is_superuser: bool = Depends(SuperUser()),
+    result: Arparma,
 ):
     """查看签到状态"""
     from .commands.arksign import arksign_status_handler
 
-    await arksign_status_handler(user_session, session, bot, result, is_superuser)
+    await arksign_status_handler(
+        user_session, session, bot, result, role_index=result.query("arksign.status.role.role_index")
+    )
 
 
 @skland.assign("arksign.all")
@@ -120,34 +145,34 @@ async def _(
     user_session: UserSession,
     session: async_scoped_session,
     bot: Bot,
-    is_superuser: bool = Depends(SuperUser()),
 ):
     """签到所有绑定角色"""
     from .commands.arksign import arksign_all_handler
 
-    await arksign_all_handler(user_session, session, bot, is_superuser)
+    await arksign_all_handler(user_session, session, bot)
 
 
-@skland.assign("char.update")
+@skland.assign("char")
 async def _(
-    user_session: UserSession, session: async_scoped_session, result: Arparma, is_superuser: bool = Depends(SuperUser())
+    user_session: UserSession,
+    session: async_scoped_session,
+    result: Arparma,
 ):
-    """更新森空岛角色信息"""
-    from .commands.char import char_update_handler
+    """Manage Skland accounts and default roles."""
+    from .commands.char import char_handler
 
-    await char_update_handler(user_session, session, result, is_superuser)
+    await char_handler(user_session, session, result)
 
 
 @skland.assign("sync")
 async def _(
     user_session: UserSession,
     result: Arparma,
-    is_superuser: bool = Depends(SuperUser()),
 ):
     """同步游戏资源"""
     from .commands.sync import sync_handler
 
-    await sync_handler(user_session, result, is_superuser)
+    await sync_handler(user_session, result)
 
 
 @skland.assign("rogue")
@@ -160,7 +185,7 @@ async def _(
     """获取明日方舟肉鸽战绩"""
     from .commands.rogue import rogue_handler
 
-    await rogue_handler(user_session, session, result, target)
+    await rogue_handler(user_session, session, result, target, role_index=result.query("rogue.role.role_index"))
 
 
 @skland.assign("rginfo")
@@ -170,11 +195,14 @@ async def _(
     ext: ReplyRecordExtension,
     result: Arparma,
     user_session: UserSession,
+    session: async_scoped_session,
 ):
     """获取明日方舟肉鸽战绩详情"""
     from .commands.rogue import rginfo_handler
 
-    await rginfo_handler(id, msg_id, ext, result, user_session)
+    await rginfo_handler(
+        id, msg_id, ext, result, user_session, session, role_index=result.query("rginfo.role.role_index")
+    )
 
 
 @skland.assign("gacha")
@@ -185,32 +213,34 @@ async def _(
     limit: Match[int],
     target: Match[At | int],
     bot: Bot,
+    result: Arparma,
 ):
     """查询明日方舟抽卡记录"""
     from .commands.gacha import gacha_handler
 
-    await gacha_handler(user_session, session, begin, limit, target, bot)
+    await gacha_handler(
+        user_session, session, begin, limit, target, bot, role_index=result.query("gacha.role.role_index")
+    )
 
 
 @skland.assign("import")
-async def _(url: Match[str], user_session: UserSession, session: async_scoped_session):
+async def _(url: Match[str], user_session: UserSession, session: async_scoped_session, result: Arparma):
     """导入明日方舟抽卡记录"""
     from .commands.gacha import import_handler
 
-    await import_handler(url, user_session, session)
+    await import_handler(url, user_session, session, role_index=result.query("import.role.role_index"))
 
 
 @skland.assign("efsign.sign")
 async def _(
     user_session: UserSession,
     session: async_scoped_session,
-    uid: Match[str],
     result: Arparma,
 ):
     """终末地森空岛签到"""
     from .commands.endfield import ef_sign_handler
 
-    await ef_sign_handler(user_session, session, uid, result)
+    await ef_sign_handler(user_session, session, result.query("efsign.sign.role.role_index"), result)
 
 
 @skland.assign("efsign.status")
@@ -218,13 +248,14 @@ async def efsign_status(
     user_session: UserSession,
     session: async_scoped_session,
     bot: Bot,
-    result: Arparma | bool,
-    is_superuser: bool = Depends(SuperUser()),
+    result: Arparma,
 ):
     """查看终末地签到状态"""
     from .commands.endfield import ef_sign_status_handler
 
-    await ef_sign_status_handler(user_session, session, bot, result, is_superuser)
+    await ef_sign_status_handler(
+        user_session, session, bot, result, role_index=result.query("efsign.status.role.role_index")
+    )
 
 
 @skland.assign("efsign.all")
@@ -232,12 +263,11 @@ async def _(
     user_session: UserSession,
     session: async_scoped_session,
     bot: Bot,
-    is_superuser: bool = Depends(SuperUser()),
 ):
     """签到所有终末地绑定角色"""
     from .commands.endfield import ef_sign_all_handler
 
-    await ef_sign_all_handler(user_session, session, bot, is_superuser)
+    await ef_sign_all_handler(user_session, session, bot)
 
 
 @skland.assign("efcard")
@@ -252,7 +282,9 @@ async def _(
 
     show_all = result.find("efcard.all")
     is_simple = result.find("efcard.simple")
-    await efcard_handler(user_session, session, target, show_all, is_simple)
+    await efcard_handler(
+        user_session, session, target, show_all, is_simple, role_index=result.query("efcard.role.role_index")
+    )
 
 
 @skland.assign("efgacha")
@@ -269,7 +301,9 @@ async def _(
     from .commands.endfield import ef_gacha_history_handler
 
     update = result.find("efgacha.update")
-    await ef_gacha_history_handler(user_session, session, begin, limit, target, bot, update)
+    await ef_gacha_history_handler(
+        user_session, session, begin, limit, target, bot, update, role_index=result.query("efgacha.role.role_index")
+    )
 
 
 @skland.assign("box")
@@ -290,6 +324,7 @@ async def _(
     name: Match[str],
     sort: Match[str],
     bot: Bot,
+    result: Arparma,
 ):
     """明日方舟干员查询"""
     from .commands.box import box_handler
@@ -311,4 +346,5 @@ async def _(
         name,
         sort,
         bot,
+        role_index=result.query("box.role.role_index"),
     )
