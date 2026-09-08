@@ -4,7 +4,7 @@ nonebot-plugin-skland
 通过森空岛查询游戏数据
 """
 
-from nonebot import require
+from nonebot import get_plugin_by_module_name, require
 from nonebot.adapters import Bot
 from nonebot.plugin import PluginMetadata, inherit_supported_adapters
 
@@ -16,6 +16,15 @@ require("nonebot_plugin_localstore")
 require("nonebot_plugin_htmlrender")
 require("nonebot_plugin_apscheduler")
 require("nonebot_plugin_waiter")
+
+_waiter_plugin = get_plugin_by_module_name("nonebot_plugin_waiter")
+if _waiter_plugin is not None:
+    _waiter_meta = getattr(_waiter_plugin, "metadata", None)
+    _waiter_extra = getattr(_waiter_meta, "extra", None)
+    if isinstance(_waiter_extra, dict):
+        _waiter_route = _waiter_extra.setdefault("ingress_route", {})
+        if isinstance(_waiter_route, dict):
+            _waiter_route["passive"] = True
 
 from nonebot_plugin_user import UserSession
 from nonebot_plugin_orm import async_scoped_session
