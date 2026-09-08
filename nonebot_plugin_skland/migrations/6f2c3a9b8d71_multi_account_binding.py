@@ -66,7 +66,7 @@ def _new_tables() -> tuple[sa.Table, sa.Table, sa.Table, sa.Table]:
         sa.Column("cred", sa.Text(), nullable=False),
         sa.Column("cred_token", sa.Text(), nullable=False),
         sa.Column("skland_user_id", sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint("id", name="pk_skland_user"),
+        sa.PrimaryKeyConstraint("id", name="pk_skland_user_multi"),
         sa.UniqueConstraint("owner_id", "skland_user_id", name="uq_skland_user_owner_account"),
         info={"bind_key": "nonebot_plugin_skland"},
     )
@@ -88,7 +88,7 @@ def _new_tables() -> tuple[sa.Table, sa.Table, sa.Table, sa.Table]:
             name="fk_skland_characters_account_id_skland_user",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id", name="pk_skland_characters"),
+        sa.PrimaryKeyConstraint("id", name="pk_skland_characters_multi"),
         sa.UniqueConstraint(
             "account_id",
             "app_code",
@@ -109,7 +109,7 @@ def _new_tables() -> tuple[sa.Table, sa.Table, sa.Table, sa.Table]:
             name="fk_skland_character_default_character_id_skland_characters",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("owner_id", "app_code", name="pk_skland_character_default"),
+        sa.PrimaryKeyConstraint("owner_id", "app_code", name="pk_skland_character_default_multi"),
         sa.UniqueConstraint("character_id", name="uq_skland_character_default_character_id"),
         info={"bind_key": "nonebot_plugin_skland"},
     )
@@ -133,7 +133,7 @@ def _new_tables() -> tuple[sa.Table, sa.Table, sa.Table, sa.Table]:
             name="fk_skland_gacha_record_character_id_skland_characters",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id", name="pk_skland_gacha_record"),
+        sa.PrimaryKeyConstraint("id", name="pk_skland_gacha_record_multi"),
         sa.UniqueConstraint(
             "character_id",
             "gacha_ts",
