@@ -172,6 +172,8 @@ skland efgacha [target] [-r|--role <index>] [-u] [-b <begin>] [-l <limit>]
 
 内置快捷指令在 `hook.py` 启动时注册，并通过 `nonebot_plugin_alconna.command_manager` 持久化到插件缓存目录的 `shortcut.db`。当前包括：森空岛绑定、扫码绑定、森空岛解绑、森空岛角色、切换方舟角色、切换终末地角色、明日方舟签到、签到详情、全体签到、全体签到详情、各肉鸽主题、角色更新、全体角色更新、资源更新、战绩详情、收藏战绩详情、方舟抽卡记录、导入抽卡记录、方舟干员、终末地签到、终末地签到详情、终末地全体签到、终末地全体签到详情、`ef|zmd`、终末地抽卡记录、终末地抽卡更新。
 
+Pallas 群聊入站路由通过 `PluginMetadata.extra["command_prefixes"]` 识别这些内置快捷指令；群聊可用的快捷指令登记在该列表中。凭证绑定仍只允许私聊，不登记 `森空岛绑定` 的群聊快捷入口。
+
 `森空岛角色` 精确匹配 `skland char`；`切换方舟角色 <index>` / `切换终末地角色 <index>` 分别映射到 `skland char set ark <index>` / `skland char set ef <index>`，使用 `fuzzy=True` 接收序号、`compact=False` 要求空格分隔，并沿用 Bot 的命令前缀。内置快捷指令在加载缓存后注册。
 
 个人签到快捷指令保留裸命令签到全部个人角色的行为；追加选项时由独立的带空白前缀规则转发到 `sign`，支持 `-r` / `--role`，不会隐式叠加 `--all`。签到详情快捷指令也允许追加选角参数。其他按角色查询的中文快捷指令继续透传参数。
