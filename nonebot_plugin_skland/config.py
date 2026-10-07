@@ -30,7 +30,7 @@ OPERATOR_METADATA_PATH = DATA_DIR / "operator_metadata.json"
 class CustomSource(BaseModel):
     uri: Url | Path
 
-    def to_uri(self) -> str | Url:
+    def resolve(self) -> Url | Path:
         if isinstance(self.uri, Path):
             uri = self.uri
             if not uri.is_absolute():
@@ -46,13 +46,17 @@ class CustomSource(BaseModel):
                 logger.debug(f"CustomSource: {uri} is a directory, random pick a file: {files}")
                 if not files:
                     raise FileNotFoundError(f"CustomSource: {uri} has no image files")
-                uri = random.choice(files).resolve()
+                return random.choice(files).resolve()
 
             if not uri.exists():
                 raise FileNotFoundError(f"CustomSource: {uri} not exists")
-            return uri.as_posix()
+            return uri.resolve()
 
         return self.uri
+
+    def to_uri(self) -> str | Url:
+        resolved = self.resolve()
+        return resolved.as_uri() if isinstance(resolved, Path) else resolved
 
 
 def _ui(group: str, order: int, label: str, **extra: object) -> dict[str, object]:
@@ -84,8 +88,8 @@ class ScopedConfig(BaseModel):
         return values
 
     github_proxy_url: str = Field(
-        default="",
-        description="GitHub 代理 URL，用于加速拉取游戏资源；留空则直连官方仓库。国内网络下载资源慢时可填镜像地址。",
+        default="https://gh-proxy.com/",
+        description="GitHub 代理前缀；请求失败会回退原站。显式设为空字符串则直连官方仓库。",
         json_schema_extra=_ui("GitHub", 10, "GitHub 代理地址"),
     )
     github_token: str = Field(
@@ -95,8 +99,13 @@ class ScopedConfig(BaseModel):
     )
     check_res_update: bool = Field(
         default=False,
-        description="启动时是否检查并下载最新游戏资源；开启后每次启动会联网检查更新，会拖慢启动时间。",
+        description="启动时是否检查并下载图片资源；开启后每次启动会联网检查更新，会拖慢启动时间。",
         json_schema_extra=_ui("资源", 10, "启动时检查资源更新"),
+    )
+    auto_update_resources: bool = Field(
+        default=True,
+        description="每天 09:00 自动检查并更新方舟游戏数据与卡池数据，不下载图片。",
+        json_schema_extra=_ui("资源", 20, "每日自动更新游戏数据"),
     )
     ark_portrait_cache_enabled: bool = Field(
         default=False,
@@ -152,6 +161,7 @@ class ScopedConfig(BaseModel):
     )
     ef_gacha_render_max: int = Field(
         default=5,
+        gt=0,
         description="终末地抽卡记录单张图片最多渲染的卡池数（各类别分别计数）。",
         json_schema_extra=_ui("渲染", 50, "终末地抽卡渲染上限"),
     )

@@ -60,7 +60,7 @@ def test_group_command_prefixes_cover_public_shortcuts_only() -> None:
         "ef",
         "zmd",
         "终末地抽卡记录",
-        "终末地抽卡更新",
+        "战争回响",
     ]
     assert "森空岛绑定" not in _metadata_extra()["command_prefixes"]
 
@@ -80,11 +80,11 @@ def test_command_menu_groups_are_preserved() -> None:
         "管理",
         "管理",
         "终末地",
-        "明日方舟",
-        "明日方舟",
-        "明日方舟",
-        "明日方舟",
         "终末地",
+        "明日方舟",
+        "明日方舟",
+        "明日方舟",
+        "明日方舟",
         "终末地",
         "明日方舟",
         "账号与绑定",
@@ -102,4 +102,5 @@ def test_command_permissions_cover_help_menu() -> None:
 
     assert command_ids <= permissions.keys()
     assert all(item.get("command_permission") for item in menu if item["func"] != "暗语")
+    assert "skland.efwar" in permissions
     assert {row["default"] for row in permissions.values()} == {"everyone"}

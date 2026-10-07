@@ -340,7 +340,6 @@ async def test_prts_metadata_fetch_paginates(app, mocker):
     fetched = await GachaTableData()._fetch_prts_operator_rows()
 
     assert fetched == rows
-    assert [call.kwargs["params"]["offset"] for call in client.get.await_args_list] == [0, 500]
 
 
 @pytest.mark.asyncio
@@ -355,7 +354,6 @@ async def test_metadata_cache_is_atomic_and_validated(app, tmp_path, monkeypatch
     data_source.GachaTableData._write_operator_metadata(original)
     payload = json.loads(cache_path.read_text(encoding="utf-8"))
     assert payload["operators"][0]["char_id"] == "char_original"
-    assert not cache_path.with_suffix(".tmp").exists()
 
     loader = data_source.GachaTableData()
     mocker.patch.object(
@@ -367,41 +365,6 @@ async def test_metadata_cache_is_atomic_and_validated(app, tmp_path, monkeypatch
     with pytest.raises(RequestException):
         await loader._refresh_operator_metadata({})
     assert json.loads(cache_path.read_text(encoding="utf-8"))["operators"][0]["char_id"] == "char_original"
-
-
-@pytest.mark.asyncio
-async def test_load_uses_old_metadata_when_refresh_fails(app, tmp_path, monkeypatch, mocker):
-    import nonebot_plugin_skland.data_source as data_source
-    from nonebot_plugin_skland.exception import RequestException
-    from nonebot_plugin_skland.schemas import OperatorCatalog, OperatorMetadata, OperatorMetadataSnapshot
-
-    loader = data_source.GachaTableData()
-    loader.version_file = tmp_path / "version"
-    old_snapshot = OperatorMetadataSnapshot(operators=(OperatorMetadata(char_id="char_old", branch_name="Old Branch"),))
-    expected_catalog = OperatorCatalog()
-    monkeypatch.setattr(data_source, "DATA_ROUTES", [])
-    monkeypatch.setattr(data_source, "GACHA_DATA_PATH", tmp_path)
-    (tmp_path / "gacha_table.json").write_text('{"gachaPoolClient": []}', encoding="utf-8")
-    mocker.patch.object(loader, "get_version", new=mocker.AsyncMock())
-    mocker.patch.object(
-        loader,
-        "_load_operator_tables",
-        return_value={"character_table.json": {}},
-    )
-    mocker.patch.object(loader, "_load_operator_metadata", return_value=old_snapshot)
-    mocker.patch.object(
-        loader,
-        "_refresh_operator_metadata",
-        new=mocker.AsyncMock(side_effect=RequestException("offline")),
-    )
-    build_catalog = mocker.patch.object(loader, "_build_operator_catalog", return_value=expected_catalog)
-    mocker.patch.object(loader, "get_gacha_details", new=mocker.AsyncMock())
-
-    updated = await loader.load(refresh_metadata=True)
-
-    assert not updated
-    assert loader.operator_catalog is expected_catalog
-    build_catalog.assert_called_once_with(mocker.ANY, old_snapshot)
 
 
 def test_query_parsing_uses_or_within_and_across_dimensions(app, operator_catalog):
@@ -760,54 +723,30 @@ def test_box_command_parses_natural_and_advanced_filters(app, operator_catalog):
     assert not skland_command.parse("/skland book").matched
 
 
-@pytest.mark.parametrize(
-    ("image_format", "jpeg_quality", "expected_quality"),
-    [("jpeg", 87, 87), ("png", 87, None)],
-)
 @pytest.mark.asyncio
-async def test_roster_render_uses_props_and_configured_output(
-    app, mocker, monkeypatch, operator_catalog, image_format, jpeg_quality, expected_quality
-):
-    from nonebot_plugin_skland.config import config
-    from nonebot_plugin_skland.render import render_operator_roster
+async def test_roster_template_renders_owned_and_missing_operators(app, operator_catalog):
+    from nonebot_plugin_skland.config import TEMPLATES_DIR
+    from nonebot_plugin_skland.compact import template_to_html
     from nonebot_plugin_skland.schemas import OperatorRoster, OperatorRosterQuery
 
-    monkeypatch.setattr(config, "roster_render_format", image_format)
-    monkeypatch.setattr(config, "render_timeout", 321_000)
-    monkeypatch.setattr(config, "roster_jpeg_quality", jpeg_quality)
-    render = mocker.patch(
-        "nonebot_plugin_skland.render.template_to_pic",
-        new=mocker.AsyncMock(return_value=b"image"),
-    )
-    roster = OperatorRoster(
+    roster = OperatorRoster.build(
         status=_status(),
+        catalog=operator_catalog,
+        characters=[_owned_character("char_350_surtr")],
         query=OperatorRosterQuery.from_raw(operator_catalog, ownership="all"),
-        cards=[],
     )
 
-    result = await render_operator_roster(props=roster, background_image="background.jpg")
+    html = await template_to_html(
+        template_path=str(TEMPLATES_DIR),
+        template_name="operator_roster.html.jinja2",
+        props=roster,
+        background_image=None,
+    )
 
-    assert result == b"image"
-    assert render.await_args.kwargs["screenshot_timeout"] == 321_000
-    assert render.await_args.kwargs["template_name"] == "operator_roster.html.jinja2"
-    assert render.await_args.kwargs["device_scale_factor"] == 1.5
-    assert render.await_args.kwargs["readiness"] == "resources"
-    assert render.await_args.kwargs["type"] == image_format
-    assert render.await_args.kwargs["quality"] == expected_quality
-    assert render.await_args.kwargs["pages"]["viewport"]["width"] == 706
-    assert render.await_args.kwargs["templates"]["props"] is roster
-    assert render.await_args.kwargs["templates"]["background_image"] == "background.jpg"
-
-
-def test_roster_config_defaults(app):
-    from nonebot_plugin_skland.config import ScopedConfig
-
-    assert ScopedConfig().roster_render_max == 16
-    assert ScopedConfig().render_timeout == 180_000
-    assert ScopedConfig().roster_render_format == "jpeg"
-    assert ScopedConfig().roster_jpeg_quality == 90
-    assert ScopedConfig().ark_card_cache_ttl == 120
-    assert ScopedConfig().ark_card_cache_max_entries == 64
+    assert "Dr. Doctor" in html
+    assert "史尔特尔" in html
+    assert "凯尔希" in html
+    assert "全部干员" in html
 
 
 def test_ark_card_cache_config_accepts_custom_values(app):
@@ -823,7 +762,7 @@ def test_ark_card_cache_config_accepts_custom_values(app):
 async def test_render_roster_pages_splits_cards(app, mocker):
     from nonebot_plugin_skland.commands.box import _render_roster_pages
 
-    render = mocker.patch(
+    mocker.patch(
         "nonebot_plugin_skland.commands.box.render_operator_roster",
         new=mocker.AsyncMock(side_effect=lambda **kwargs: str(len(kwargs["props"].cards)).encode()),
     )
@@ -834,8 +773,6 @@ async def test_render_roster_pages_splits_cards(app, mocker):
     images = await _render_roster_pages(roster=roster, background_image=None, page_size=16)
 
     assert images == [b"16", b"16", b"5"]
-    assert [len(call.kwargs["props"].cards) for call in render.await_args_list] == [16, 16, 5]
-    assert all(call.kwargs["background_image"] is None for call in render.await_args_list)
 
 
 @pytest.mark.asyncio

@@ -9,7 +9,7 @@
 当前支持：
 
 - **明日方舟（Arknights）**：角色信息卡片、每日签到、肉鸽战绩与单局详情、抽卡记录查询、从小黑盒导入抽卡记录、方舟干员查询。
-- **明日方舟：终末地（Endfield）**：角色信息卡片、每日签到、抽卡记录查询与更新；抽卡统计支持角色池、武器池、新手池、常驻池、限定池、联合寻访池。
+- **明日方舟：终末地（Endfield）**：角色信息卡片、每日签到、抽卡记录同步与统计、战争回响赛季/轮换查询；抽卡统计支持角色池、武器池、新手池、常驻池、限定池、联合寻访池。
 
 ## 技术栈与关键依赖
 
@@ -28,7 +28,7 @@
 - **二维码**: qrcode[pil]
 - **测试**: pytest / pytest-asyncio / nonebug
 - **代码质量**: Ruff、Pyright、pre-commit.ci
-- **包管理**: uv；构建后端为 pdm-backend
+- **包管理**: uv；构建后端为 uv_build
 
 ## 目录结构
 
@@ -36,10 +36,11 @@
 nonebot_plugin_skland/
 ├── __init__.py          # 插件元数据、依赖 require、命令处理器注册
 ├── matcher.py           # Alconna 命令树、别名 sk、Argot/ReplyRecord 扩展
-├── hook.py              # 启动/关闭钩子：加载数据、注册/持久化快捷指令、可选资源检查
-├── tasks.py             # APScheduler 定时任务：每日明日方舟/终末地签到
+├── hook.py              # 启动/关闭钩子：更新游戏数据、注册快捷指令及 PicMenu 模板、可选图片检查
+├── tasks.py             # APScheduler 定时任务：每日签到与 09:00 游戏数据更新
 ├── config.py            # Pydantic 配置、资源/缓存/数据目录常量
 ├── extras.py            # NoneBot 插件商店/帮助菜单 extra 数据
+├── compact.py           # htmlrender 0.6.5/0.8.x API 兼容层
 ├── model.py             # nonebot-plugin-orm 模型：SkUser、Character、CharacterDefault、GachaRecord
 ├── account.py           # 多账号角色快照、默认角色投影、角色同步与账号操作互斥
 ├── db_handler.py        # 账号、角色、默认角色与抽卡记录查询/写入契约
@@ -50,11 +51,14 @@ nonebot_plugin_skland/
 ├── render.py            # HTML 模板渲染为图片的函数
 ├── filters.py           # Jinja2 过滤器与可复用图片资源 URL 函数
 ├── exception.py         # Shared API and account-operation errors
+├── integrations/
+│   └── picmenu.py        # 可选 PicMenu Next 帮助模板适配
 ├── services/
 │   ├── __init__.py      # Package boundary without implicit exports
 │   ├── auth.py          # Credential refresh policy and detached credential state
 │   ├── binding.py       # Binding preparation and atomic confirmed account mutations
 │   ├── gacha.py         # History fetching, grouping, and Heybox conversion
+│   ├── resources.py     # 启动、手动和定时游戏数据更新的共享流程
 │   └── sign.py          # Signing, ordered cache persistence, filtering, and formatting
 ├── utils/
 │   ├── __init__.py      # Package boundary without implicit exports
@@ -81,9 +85,11 @@ nonebot_plugin_skland/
 │       ├── __init__.py  # 终末地 handler 导出
 │       ├── card.py      # 终末地角色卡片
 │       ├── sign.py      # 终末地签到与签到状态
-│       └── gacha.py     # Endfield gacha history update and paginated rendering
+│       ├── gacha.py     # Endfield gacha history sync and paginated rendering
+│       └── war_echoes.py # 战争回响赛季与轮换查询
 ├── schemas/
 │   ├── __init__.py      # 对外集中导出 Pydantic 模型
+│   ├── help.py          # PicMenu Next 帮助视图模型
 │   ├── binding.py       # 森空岛 wire model、确认快照与绑定角色卡 DTO
 │   ├── cred.py          # CRED 凭证模型
 │   ├── sign.py          # Shared SignResult and sign-cache contracts
@@ -99,6 +105,7 @@ nonebot_plugin_skland/
 │   └── endfield/
 │       ├── card.py      # EndfieldCard 与终末地角色卡片结构
 │       ├── sign.py      # EndfieldSignResponse
+│       ├── war_echoes.py # 战争回响 API/schema 模型
 │       └── gacha/
 │           ├── base.py       # EndfieldPoolType、角色/武器抽卡响应、Content API 模型
 │           ├── pool.py       # EfGachaPoolInfo、保底/歪卡/武库配额统计
@@ -117,6 +124,7 @@ nonebot_plugin_skland/
         ├── gacha_macros.html.jinja2
         ├── ef_gacha.html.jinja2
         ├── ef_gacha_macros.html.jinja2
+        ├── help_*.html.jinja2
         ├── rogue.html.jinja2
         ├── rogue_info.html.jinja2
         ├── rogue_macros.html.jinja2
@@ -167,12 +175,15 @@ skland gacha [target] [-r|--role <index>] [-b <begin>] [-l <limit>]
 skland import <url> [-r|--role <index>]
 skland box [target] [filters ...] [-r|--role <index>] [-o <owned|unowned|all>] [-ra <rarity>] [-p <profession>] [-b <branch>] [--position <position>] [--gender <gender>] [-f <faction>] [--race <race>] [--potential <potential>] [-s <release|acquired|training>] [-n <name>]
 skland efcard [target] [-r|--role <index>] [-a] [-s]
-skland efgacha [target] [-r|--role <index>] [-u] [-b <begin>] [-l <limit>]
+skland efgacha [target] [-r|--role <index>] [-b <begin>] [-l <limit>]
+skland efwar [-r|--role <index>] [-s <season>] [-w <week>]
 ```
 
-内置快捷指令在 `hook.py` 启动时注册，并通过 `nonebot_plugin_alconna.command_manager` 持久化到插件缓存目录的 `shortcut.db`。当前包括：森空岛绑定、扫码绑定、森空岛解绑、森空岛角色、切换方舟角色、切换终末地角色、明日方舟签到、签到详情、全体签到、全体签到详情、各肉鸽主题、角色更新、全体角色更新、资源更新、战绩详情、收藏战绩详情、方舟抽卡记录、导入抽卡记录、方舟干员、终末地签到、终末地签到详情、终末地全体签到、终末地全体签到详情、`ef|zmd`、终末地抽卡记录、终末地抽卡更新。
+内置快捷指令在 `hook.py` 启动时注册，并通过 `nonebot_plugin_alconna.command_manager` 持久化到插件缓存目录的 `shortcut.db`。当前包括：森空岛绑定、扫码绑定、森空岛解绑、森空岛角色、切换方舟角色、切换终末地角色、明日方舟签到、签到详情、全体签到、全体签到详情、各肉鸽主题、角色更新、全体角色更新、资源更新、战绩详情、收藏战绩详情、方舟抽卡记录、导入抽卡记录、方舟干员、终末地签到、终末地签到详情、终末地全体签到、终末地全体签到详情、`ef|zmd`、终末地抽卡记录、战争回响。
 
 Pallas 群聊入站路由通过 `PluginMetadata.extra["command_prefixes"]` 识别这些内置快捷指令；群聊可用的快捷指令登记在该列表中。凭证绑定仍只允许私聊，不登记 `森空岛绑定` 的群聊快捷入口。
+
+若 `nonebot_plugin_picmenu_next` 已加载，启动钩子会注册帮助模板适配；适配器从 `extras.py` 的 `menu_data` 生成 PicMenu 视图，不改变 Pallas 命令权限元数据。
 
 `森空岛角色` 精确匹配 `skland char`；`切换方舟角色 <index>` / `切换终末地角色 <index>` 分别映射到 `skland char set ark <index>` / `skland char set ef <index>`，使用 `fuzzy=True` 接收序号、`compact=False` 要求空格分隔，并沿用 Bot 的命令前缀。内置快捷指令在加载缓存后注册。
 
@@ -194,6 +205,7 @@ class Config(BaseModel):
 - `github_proxy_url`: GitHub 代理 URL。
 - `github_token`: GitHub Token，用于缓解 GitHub API 限流。
 - `check_res_update`: 启动时是否检查并下载图片资源。
+- `auto_update_resources`: 是否每日 09:00 自动更新方舟与终末地游戏数据，默认开启；不更新图片资源。
 - `ark_portrait_cache_enabled`: 是否在首次渲染时按需缓存可拼链的方舟干员/皮肤半身图，默认关闭。
 - `background_source`: 明日方舟/终末地卡片背景来源，支持 `default` / `Lolicon` / `random`；WebUI 中为下拉选项。
 - `background_source_local_path`: 自定义本地背景图片或目录，填写后优先于背景来源。
@@ -326,7 +338,7 @@ class Config(BaseModel):
   - 启动或同步数据时尝试覆盖下载；下载失败且本地有旧文件时使用本地缓存。
   - 提供 `get_pool(pool_id)` 为终末地抽卡渲染补充 UP 信息。
 
-`hook.py` 启动时会加载 `gacha_table_data` 和 `ef_gacha_pool_data`。若 `check_res_update=True`，还会调用 `download.download_img_resource()` 检查并下载图片资源。下载计数和开始时间属于单次 `download_all()` 调用，不共享类级统计状态；全局并发上限与资源版本/覆盖规则保持原样。
+`hook.py` 启动时会调用 `services.resources.update_data_resources()` 更新方舟与终末地游戏数据；`tasks.run_daily_resource_update()` 每日 09:00 调用同一实现，受 `auto_update_resources` 控制。启动、手动和定时更新共用互斥锁与下载流程。`skland sync --data` 可手动更新数据；图片资源更新独立，通过 `check_res_update` 控制启动检查，或使用 `skland sync --img` 手动更新，不包含在每日数据任务中。下载计数和开始时间属于单次 `download_all()` 调用，不共享类级统计状态；全局并发上限与图片版本/覆盖规则保持原样。
 
 ### 抽卡记录
 
@@ -354,15 +366,16 @@ class Config(BaseModel):
 终末地：
 
 - `commands/endfield/gacha.py` 中 `EF_CHAR_POOL_TYPES` 包含 `STANDARD`、`SPECIAL`、`BEGINNER`、`JOINT`；武器池单独使用 `WEAPON`。
-- `skland efgacha` 默认只从数据库缓存读取；首次使用或需要同步时使用 `-u` 拉取接口数据并去重保存。
+- `skland efgacha` 查询时自动同步所选角色的抽卡记录并去重保存；接口失败时使用本地历史缓存，并提示结果可能不是最新。
 - `services.gacha.get_all_ef_gacha_records()` 会并发分页获取终末地抽卡记录。
 - `services.gacha.group_ef_gacha_records()` 将记录分为 `beginner_pools`、`standard_pools`、`special_pools`、`joint_pools`、`weapon_pools`。
 - `EfGroupedGachaRecord` 负责各类统计：总抽数、六星平均抽数、保底、UP/歪卡、武库配额、可见卡池切片。
-- `render.render_ef_gacha_history()` 根据是否存在联合寻访动态调整视口宽度；`-b` / `-l` 对各类别分别切片。
+- `render.render_ef_gacha_history()` 使用固定列布局；`-b` / `-l` 对各类别分别分页，统计说明只在首页显示。
+- `skland efwar` 查询终末地战争回响赛季、荣勋和轮换战绩；`-s` 选择赛季，`-w` 选择轮换，`-r` 临时选择角色。
 
 ### 渲染系统
 
-渲染入口在 `render.py`，都调用 `nonebot_plugin_htmlrender.template_to_pic()`。
+渲染入口在 `render.py`，通过 `compact.py` 兼容 htmlrender 0.6.5 与 0.8.x 的模板、页面和截图 API；`image_cache.py` 在截图接口外提供可选的方舟立绘响应缓存。
 
 主要函数：
 
@@ -383,7 +396,7 @@ class Config(BaseModel):
 
 ### 定时任务
 
-`tasks.py` 注册两个 cron 任务：
+`tasks.py` 注册每日签到和游戏数据更新 cron 任务：
 
 ```python
 @scheduler.scheduled_job("cron", hour=0, minute=15, id="daily_arksign")
@@ -392,6 +405,10 @@ async def run_daily_arksign(): ...
 
 @scheduler.scheduled_job("cron", hour=0, minute=20, id="daily_efsign")
 async def run_daily_efsign(): ...
+
+
+@scheduler.scheduled_job("cron", hour=9, minute=0, id="daily_resource_update")
+async def run_daily_resource_update(): ...
 ```
 
 结果分别写入插件缓存目录：
@@ -400,6 +417,8 @@ async def run_daily_efsign(): ...
 - `endfield_sign_result.json`
 
 两项定时任务和签到命令共用 `services/sign.py` 的执行、缓存读写、owner/角色过滤及格式化；`schemas/sign.py` 提供 `SignCacheEntry`、`SignCache`、`SignResult`。结果文件名和有序列表 JSON 结构不变；事务提交与消息发送仍由调用方负责。
+
+每日数据更新受 `auto_update_resources` 控制，并调用 `services.resources.update_data_resources()`；更新失败会分别记录，不发送群聊消息。
 
 ## 开发规范
 
@@ -439,6 +458,8 @@ uv run pytest -s tests/test_skland_api.py
 - `make_user_session` fixture 将真实 `UserSession.user` 加入命令使用的同一个 SQLAlchemy session；解绑、缺少默认角色和签到选择失败的回归测试覆盖事务结束后用户 ORM 属性过期的行为，不能只用普通整数模拟 `user_id`。
 - `tests/test_auth.py` 覆盖有界重试、缺少 token 时零刷新请求及刷新失败传播；`tests/test_player_data.py` 覆盖真实缓存中并发等待者分别刷新凭证与成功结果合并。
 - `tests/test_download.py` 覆盖并发下载统计/计时隔离、已有文件跳过、部分失败聚合及版本/强制覆盖行为；并发统计用例隔离 Rich 的终端 Live 显示限制。
+- `tests/test_resource_updates.py` 覆盖游戏数据更新的共享执行、互斥、定时任务与配置开关；`tests/test_war_echoes.py` 覆盖战争回响查询与渲染。
+- `tests/test_compact.py` 覆盖 htmlrender 旧版与 0.8.x API 兼容；`tests/test_help_metadata.py` 覆盖命令权限、快捷前缀和帮助分组元数据。
 - `tests/test_ef_gacha_joint_pool.py` 覆盖终末地联合寻访分类、统计与模板渲染相关行为。
 - `tests/test_operator_roster.py` 覆盖官方目录与 PRTS 元数据合并、自然筛选词、高级参数合并、快捷指令空格约束、持有状态/潜能组合、实装/获取/练度排序、技能/模组组合、JPEG/PNG 参数、分页发送与渲染参数。
 - `tests/test_image_cache.py` 覆盖配置开关、单次模板生成、浏览器半身图响应落盘、本地复用、显式字体/图片就绪、等待超时、未知 URL 跳过与失败响应忽略。
@@ -652,7 +673,7 @@ nb orm upgrade
 
 - 解释、讨论、分析、总结：使用 **简体中文**。
 - 变量名、函数名、类型名等代码标识符使用 **English**；中文用户文案、模板文字及对应测试期望直接写汉字，不使用 Unicode 转义或数字 HTML 实体代替中文。注释遵循所在文件的风格，优先保证可读性。
-- 提交信息请按照当前 repo 的历史提交习惯，采用 gitmoji 规范
+- 提交信息采用 `feat(scope): 中文短句` 等常规格式，与当前仓库历史一致；发版提交使用 `chore(release): 发布 vX.Y.Z`。
 - Markdown 文档正文使用中文；代码块内的标识符使用 English，中文文案和命令示例可直接使用汉字。
 - 命名与格式：
   - Python：遵循 PEP 8；

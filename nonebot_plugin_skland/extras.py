@@ -1,3 +1,5 @@
+from nonebot import get_driver
+
 extra_data = {
     "menu_data": [
         {
@@ -234,6 +236,24 @@ extra_data = {
             ),
         },
         {
+            "func": "战争回响",
+            "group": "终末地",
+            "command_permission": "skland.efwar",
+            "trigger_method": "**已绑定用户**",
+            "trigger_condition": "**战争回响** | `skland efwar`",
+            "brief_des": "查询战争回响赛季、荣勋与轮换战绩。",
+            "detail_des": (
+                "- **战争回响**\n\n"
+                "```bash\n"
+                "skland efwar [-r <index>] [-s <season>] [-w <week>]\n"
+                "```\n\n"
+                " **快捷指令** ：`战争回响`\n\n"
+                "默认展示当前赛季和当前轮换；"
+                "`-s` 正数使用卡片中的赛季序号，负数从当前赛季回溯（`-1` 为上一赛季）；"
+                "`-w` 使用轮换序号，`-r` 临时选择自己的终末地角色。"
+            ),
+        },
+        {
             "func": "<傀影|水月|萨米|萨卡兹|界园|树海>肉鸽",
             "group": "明日方舟",
             "command_permission": "skland.rogue",
@@ -326,36 +346,18 @@ extra_data = {
             "command_permission": "skland.efgacha",
             "trigger_method": "**无限制**",
             "trigger_condition": "**终末地抽卡记录** | `skland efgacha`",
-            "brief_des": "查询绑定到bot的终末地账号的抽卡记录。",
+            "brief_des": "获取、保存并展示终末地角色的最新抽卡记录。",
             "detail_des": (
                 "- **终末地抽卡记录**\n\n"
                 "```bash\n"
                 "skland efgacha [-r <index>] [-b <begin>] [-l <limit>]\n"
                 "```\n\n"
                 " **快捷指令** ：`终末地抽卡记录`\n\n"
-                "从数据库缓存读取并渲染终末地抽卡记录；追加 `-r <序号>` 可临时选择自己的角色。\n"
+                "获取、保存并展示终末地抽卡记录；追加 `-r <序号>` 可临时选择自己的角色。\n"
                 "支持 `-b` 和 `-l` 参数控制各类别渲染的卡池范围（限定/武器/常驻/新手分别计数），"
-                "卡池数量超过上限时将自动分页发送多张图片。\n\n"
-                "> **注意：** 首次使用或需要更新数据时，请使用 `终末地抽卡更新` 快捷指令。"
-            ),
-        },
-        {
-            "func": "终末地抽卡更新",
-            "group": "终末地",
-            "command_permission": "skland.efgacha",
-            "trigger_method": "**无限制**",
-            "trigger_condition": "**终末地抽卡更新** | `skland efgacha -u`",
-            "brief_des": "从接口拉取最新终末地抽卡记录并更新数据库。",
-            "detail_des": (
-                "- **终末地抽卡更新**\n\n"
-                "```bash\n"
-                "skland efgacha -u [-r <index>] [-b <begin>] [-l <limit>]\n"
-                "```\n\n"
-                " **快捷指令** ：`终末地抽卡更新`\n\n"
-                "从森空岛接口拉取最新终末地抽卡记录，去重后保存至数据库，再渲染输出。\n"
-                "追加 `-r <序号>` 指定更新角色；`-b` / `-l` 仍只控制渲染的卡池范围。\n\n"
-                "> **注意：** 该操作需要请求接口，耗时较长。"
-                "如无新增记录需要更新请使用 `终末地抽卡记录` 快捷指令。"
+                "卡池数量超过上限时将自动分页发送多张图片；三列固定为限定、武器、新手/常驻/联合，"
+                "同类按时间倒序续页，累计统计仅首页显示。\n\n"
+                "每次查询都会先尝试获取最新记录；接口不可用或账号未保存 token 时，有历史记录则继续展示并标注未更新。"
             ),
         },
         {
@@ -418,15 +420,17 @@ extra_data = {
             "group": "管理",
             "command_permission": "skland.sync",
             "trigger_method": "**无限制**",
-            "trigger_condition": "**资源更新** | `skland sync`",
-            "brief_des": "更新游戏资源（图片和数据）。",
+            "trigger_condition": "**资源更新** | `skland sync --data`",
+            "brief_des": "检查并更新游戏数据与卡池数据，不下载图片。",
             "detail_des": (
                 "-  **资源更新**\n\n"
                 "```bash\n"
-                "skland sync\n"
+                "skland sync --data\n"
                 "```\n\n"
                 "**快捷指令** ：资源更新\n\n"
-                "同时更新游戏图片资源和数据资源。\n\n"
+                "快捷指令仅更新数据；手动 `skland sync` 仍同时更新图片与数据。\n"
+                "每天 09:00 自动检查数据，沿用 APScheduler 时区（默认 Asia/Shanghai）；"
+                "可设置 `skland__auto_update_resources=False` 关闭。\n\n"
                 "- **仅更新图片资源**\n\n"
                 "```bash\n"
                 "skland sync --img\n"
@@ -447,8 +451,8 @@ extra_data = {
                 "skland sync --update\n"
                 "```\n\n"
                 "更新图片资源时，覆盖已存在的图片文件。\n\n"
-                "> 资源渲染优先读取本地资源，本地资源不存在时才从网络下载\n"
-                "> 如果服务器网络资源不紧缺则无需下载一坨资源\n"
+                "> 数据按固定路径下载，不请求仓库文件树；下载或校验失败时保留旧数据。\n"
+                "> 图片资源更新仍为可选操作，不在每日数据更新范围内。\n"
                 "> 可以组合使用选项，例如 `skland sync --img --force --update`"
             ),
         },
@@ -496,4 +500,15 @@ extra_data = {
         },
     ],
     "pmn": {"markdown": True},
+}
+
+HELP_PREFIX = min(get_driver().config.command_start, key=lambda value: (len(value), value), default="")
+_HELP_CATEGORY_BY_GROUP = {
+    "账号与绑定": "account",
+    "明日方舟": "arknights",
+    "终末地": "endfield",
+    "管理": "other",
+}
+HELP_CATEGORIES = {
+    item["func"]: _HELP_CATEGORY_BY_GROUP.get(item.get("group"), "other") for item in extra_data["menu_data"]
 }
