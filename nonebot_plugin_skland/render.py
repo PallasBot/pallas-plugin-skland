@@ -1,21 +1,23 @@
 from datetime import datetime
+from collections.abc import Callable
 
-from pydantic import AnyUrl as Url
-
-from .model import Character
+from .image_cache import wait_for_page_resources
 from .config import RES_DIR, TEMPLATES_DIR, config
+from .compact import open_html_page, template_to_html
+from .utils.background import BackgroundImage, background_to_uri
 from .image_cache import cached_template_to_pic as template_to_pic
 from .schemas import (
     Clue,
     Status,
     ArkCard,
+    HelpView,
     RogueData,
-    PlayerBase,
+    EfGachaView,
     EndfieldCard,
+    WarEchoesView,
     BoundRolesCard,
     OperatorRoster,
     GroupedGachaRecord,
-    EfGroupedGachaRecord,
 )
 from .filters import (
     loads_json,
@@ -25,6 +27,7 @@ from .filters import (
     format_timestamp,
     get_rarity_color,
     time_to_next_4am,
+    war_echoes_asset,
     get_property_icon,
     charId_to_avatarUrl,
     format_stamina_time,
@@ -33,26 +36,31 @@ from .filters import (
     format_timestamp_str,
     charId_to_portraitUrl,
     ef_charId_to_avatarUrl,
+    format_war_echoes_date,
     get_equip_rarity_color,
+    war_echoes_stage_asset,
     time_to_next_monday_4am,
+    war_echoes_rating_asset,
+    format_war_echoes_duration,
+    war_echoes_potential_asset,
 )
 
 
 async def render_operator_roster(
     *,
     props: OperatorRoster,
-    background_image: str | Url | None,
+    background_image: BackgroundImage | None,
 ) -> bytes:
     return await template_to_pic(
         template_path=str(TEMPLATES_DIR),
         template_name="operator_roster.html.jinja2",
         templates={
             "props": props,
-            "background_image": background_image,
+            "background_image": background_to_uri(background_image),
         },
         pages={
             "viewport": {"width": 706, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         device_scale_factor=1.5,
         screenshot_timeout=config.render_timeout,
@@ -69,7 +77,7 @@ async def render_bound_roles_card(props: BoundRolesCard) -> bytes:
         templates={"props": props},
         pages={
             "viewport": {"width": 706, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         device_scale_factor=1.5,
         screenshot_timeout=config.render_timeout,
@@ -77,13 +85,29 @@ async def render_bound_roles_card(props: BoundRolesCard) -> bytes:
     )
 
 
-async def render_ark_card(props: ArkCard, bg: str | Url) -> bytes:
+async def render_help(props: HelpView, *, layout: Callable[[str, bool], str]) -> bytes:
+    return await template_to_pic(
+        template_path=str(TEMPLATES_DIR),
+        template_name="help_overview.html.jinja2" if props.variant == "overview" else "help_detail.html.jinja2",
+        templates={"props": props, "layout": layout},
+        pages={
+            "viewport": {"width": 706, "height": 1},
+            "base_url": TEMPLATES_DIR.as_uri(),
+        },
+        device_scale_factor=1.5,
+        screenshot_timeout=config.render_timeout,
+        readiness="resources",
+        type="png",
+    )
+
+
+async def render_ark_card(props: ArkCard, bg: BackgroundImage) -> bytes:
     return await template_to_pic(
         template_path=str(TEMPLATES_DIR),
         template_name="ark_card.html.jinja2",
         templates={
             "now_ts": datetime.now().timestamp(),
-            "background_image": bg,
+            "background_image": background_to_uri(bg),
             "status": props.status,
             "employed_chars": len(props.chars),
             "skins": len(props.skins),
@@ -105,18 +129,18 @@ async def render_ark_card(props: ArkCard, bg: str | Url) -> bytes:
         },
         pages={
             "viewport": {"width": 706, "height": 1160},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         screenshot_timeout=config.render_timeout,
     )
 
 
-async def render_rogue_card(props: RogueData, bg: str | Url) -> bytes:
+async def render_rogue_card(props: RogueData, bg: BackgroundImage) -> bytes:
     return await template_to_pic(
         template_path=str(TEMPLATES_DIR),
         template_name="rogue.html.jinja2",
         templates={
-            "background_image": bg,
+            "background_image": background_to_uri(bg),
             "topic_img": props.topic_img,
             "topic": props.topic,
             "now_ts": datetime.now().timestamp(),
@@ -131,14 +155,14 @@ async def render_rogue_card(props: RogueData, bg: str | Url) -> bytes:
         },
         pages={
             "viewport": {"width": 2200, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         device_scale_factor=1.5,
         screenshot_timeout=config.render_timeout,
     )
 
 
-async def render_rogue_info(props: RogueData, bg: str | Url, id: int, is_favored: bool) -> bytes:
+async def render_rogue_info(props: RogueData, bg: BackgroundImage, id: int, is_favored: bool) -> bytes:
     return await template_to_pic(
         template_path=str(TEMPLATES_DIR),
         template_name="rogue_info.html.jinja2",
@@ -148,7 +172,7 @@ async def render_rogue_info(props: RogueData, bg: str | Url, id: int, is_favored
             if is_favored and id - 1 < len(props.history.favourRecords)
             else (props.history.records[id - 1] if id - 1 < len(props.history.records) else None),
             "is_favored": is_favored,
-            "background_image": bg,
+            "background_image": background_to_uri(bg),
             "topic_img": props.topic_img,
             "topic": props.topic,
             "now_ts": datetime.now().timestamp(),
@@ -164,7 +188,7 @@ async def render_rogue_info(props: RogueData, bg: str | Url, id: int, is_favored
         },
         pages={
             "viewport": {"width": 1100, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         device_scale_factor=1.5,
         screenshot_timeout=config.render_timeout,
@@ -180,7 +204,7 @@ async def render_clue_board(props: Clue):
         },
         pages={
             "viewport": {"width": 1100, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         device_scale_factor=1.5,
         screenshot_timeout=config.render_timeout,
@@ -212,58 +236,80 @@ async def render_gacha_history(
         },
         pages={
             "viewport": {"width": 720, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         device_scale_factor=1.5,
         screenshot_timeout=config.render_timeout,
     )
 
 
-EF_GACHA_BASE_MIN_WIDTH = 680
-EF_GACHA_JOINT_MIN_WIDTH = 900
-EF_GACHA_VIEWPORT_PADDING = 120
+EF_GACHA_PAGE_WIDTH = 800
+EF_GACHA_PAGE_HEIGHT = 1600
 
 
-def get_ef_gacha_min_width(props: EfGroupedGachaRecord) -> int:
-    return EF_GACHA_JOINT_MIN_WIDTH if props.joint_pools else EF_GACHA_BASE_MIN_WIDTH
-
-
-def get_ef_gacha_viewport_width(props: EfGroupedGachaRecord) -> int:
-    return get_ef_gacha_min_width(props) + EF_GACHA_VIEWPORT_PADDING
-
-
-async def render_ef_gacha_history(
-    props: EfGroupedGachaRecord,
-    player: PlayerBase,
-    char: Character,
-    begin: int | None = None,
-    limit: int | None = None,
-) -> bytes:
-    return await template_to_pic(
+async def render_ef_gacha_history(props: EfGachaView) -> list[bytes]:
+    """Measure complete event cards, paginate them, and capture bounded pages."""
+    html = await template_to_html(
         template_path=str(TEMPLATES_DIR),
         template_name="ef_gacha.html.jinja2",
-        templates={
-            "avatar_url": player.avatarUrl,
-            "record": props,
-            "character": char,
-            "ef_gacha_min_width": get_ef_gacha_min_width(props),
-            "start_index": begin,
-            "end_index": limit,
-        },
+        props=props,
         filters={
             "format_timestamp_md": format_timestamp_md,
             "ef_charId_to_avatarUrl": ef_charId_to_avatarUrl,
         },
-        pages={
-            "viewport": {"width": get_ef_gacha_viewport_width(props), "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
-        },
+    )
+    async with open_html_page(
+        html,
+        template_path=TEMPLATES_DIR.as_uri(),
+        wait_until="load",
         device_scale_factor=1.5,
+        before_load=lambda page: page.set_default_timeout(config.render_timeout),
+        viewport={"width": EF_GACHA_PAGE_WIDTH, "height": EF_GACHA_PAGE_HEIGHT},
+        base_url=TEMPLATES_DIR.as_uri(),
+    ) as page:
+        await wait_for_page_resources(page, config.render_timeout)
+        page_count = await page.evaluate(
+            "options => window.paginateEndfieldGacha(options)",
+            {"maxHeight": EF_GACHA_PAGE_HEIGHT, "maxPools": config.ef_gacha_render_max},
+        )
+        await wait_for_page_resources(page, config.render_timeout)
+        pages = page.locator("#ef-pages > .ef-page")
+        return [
+            await pages.nth(index).screenshot(type="png", timeout=config.render_timeout) for index in range(page_count)
+        ]
+
+
+async def render_ef_war_echoes(props: WarEchoesView) -> bytes:
+    return await template_to_pic(
+        template_path=str(TEMPLATES_DIR),
+        template_name="ef_war_echoes.html.jinja2",
+        templates={"view": props},
+        filters={
+            "war_echoes_asset": war_echoes_asset,
+            "war_echoes_rating_asset": war_echoes_rating_asset,
+            "war_echoes_stage_asset": war_echoes_stage_asset,
+            "war_echoes_potential_asset": war_echoes_potential_asset,
+            "get_property_icon": get_property_icon,
+            "get_rarity_color": get_rarity_color,
+            "format_war_echoes_date": format_war_echoes_date,
+            "format_war_echoes_duration": format_war_echoes_duration,
+        },
+        pages={
+            "viewport": {"width": 422, "height": 1},
+            "base_url": TEMPLATES_DIR.as_uri(),
+        },
+        device_scale_factor=2,
         screenshot_timeout=config.render_timeout,
+        readiness="resources",
     )
 
 
-async def render_ef_card(props: EndfieldCard, bg: str | Url, show_all: bool = False, is_simple: bool = False) -> bytes:
+async def render_ef_card(
+    props: EndfieldCard,
+    bg: BackgroundImage,
+    show_all: bool = False,
+    is_simple: bool = False,
+) -> bytes:
     # 预处理角色列表：根据 show_all 决定是否过滤
     if show_all:
         filtered_chars = props.chars
@@ -295,15 +341,15 @@ async def render_ef_card(props: EndfieldCard, bg: str | Url, show_all: bool = Fa
 
     # Simple 背景模式：命令行参数优先于配置
     simple_bg_enabled = is_simple or config.endfield_background_simple
-    simple_bg = (RES_DIR / "images" / "background" / "endfield" / "simple" / "simple_bg.png").as_posix()
-    simple_bg_top = (RES_DIR / "images" / "background" / "endfield" / "simple" / "simple_bg_top.png").as_posix()
+    simple_bg = (RES_DIR / "images" / "background" / "endfield" / "simple" / "simple_bg.png").resolve().as_uri()
+    simple_bg_top = (RES_DIR / "images" / "background" / "endfield" / "simple" / "simple_bg_top.png").resolve().as_uri()
 
     return await template_to_pic(
         template_path=str(TEMPLATES_DIR),
         template_name="endfield_card.html.jinja2",
         templates={
             "now_ts": datetime.now().timestamp(),
-            "background_image": bg,
+            "background_image": background_to_uri(bg),
             "simple_bg_enabled": simple_bg_enabled,
             "simple_bg": simple_bg,
             "simple_bg_top": simple_bg_top,
@@ -334,7 +380,7 @@ async def render_ef_card(props: EndfieldCard, bg: str | Url, show_all: bool = Fa
         },
         pages={
             "viewport": {"width": 706, "height": 1},
-            "base_url": f"file://{TEMPLATES_DIR}",
+            "base_url": TEMPLATES_DIR.as_uri(),
         },
         screenshot_timeout=config.render_timeout,
     )

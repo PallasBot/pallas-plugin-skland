@@ -145,13 +145,20 @@ skland_command = Alconna(
         help_text="终末地角色面板查询",
     ),
     Subcommand(
+        "efwar",
+        Args["target?#目标", At | int],
+        _role_option(),
+        Option("-s|--season|season", Args["season_id", int], help_text="赛季序号，负数从当前赛季回溯"),
+        Option("-w|--week|week", Args["week_id", int], help_text="轮换序号"),
+        help_text="查询战争回响战绩",
+    ),
+    Subcommand(
         "efgacha",
         Args["target?#目标", At | int],
         _role_option(),
         Option("-b|--begin|begin", Args["begin", int], help_text="查询起始位置"),
         Option("-l|--limit|limit", Args["limit", int], help_text="查询抽卡记录卡池渲染上限"),
-        Option("-u|--update|update", help_text="从接口拉取最新数据并更新"),
-        help_text="终末地抽卡记录查询",
+        help_text="获取并展示终末地抽卡记录",
     ),
     Subcommand(
         "box",

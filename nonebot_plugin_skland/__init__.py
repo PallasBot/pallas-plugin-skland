@@ -82,7 +82,7 @@ __plugin_meta__ = PluginMetadata(
             "ef",
             "zmd",
             "终末地抽卡记录",
-            "终末地抽卡更新",
+            "战争回响",
         ],
         "command_permissions": [
             {"id": "skland.bind", "label": "绑定森空岛账号", "default": "everyone"},
@@ -104,6 +104,7 @@ __plugin_meta__ = PluginMetadata(
             {"id": "skland.import", "label": "导入抽卡记录", "default": "everyone"},
             {"id": "skland.box", "label": "方舟干员查询", "default": "everyone"},
             {"id": "skland.efgacha", "label": "终末地抽卡记录", "default": "everyone"},
+            {"id": "skland.efwar", "label": "战争回响", "default": "everyone"},
             {"id": "skland.char", "label": "账号角色管理", "default": "everyone"},
             {"id": "skland.char_update_all", "label": "全体角色更新", "default": "everyone"},
             {"id": "skland.sync", "label": "资源更新", "default": "everyone"},
@@ -331,6 +332,28 @@ async def _(
     )
 
 
+@skland.assign("efwar")
+async def _(
+    user_session: UserSession,
+    session: async_scoped_session,
+    target: Match[At | int],
+    season_id: Match[int],
+    week_id: Match[int],
+    result: Arparma,
+):
+    """查询终末地战争回响战绩"""
+    from .commands.endfield import ef_war_echoes_handler
+
+    await ef_war_echoes_handler(
+        user_session,
+        session,
+        target,
+        role_index=result.query("efwar.role.role_index"),
+        season_id=season_id.result if season_id.available else None,
+        week_id=week_id.result if week_id.available else None,
+    )
+
+
 @skland.assign("efgacha")
 async def _(
     user_session: UserSession,
@@ -344,9 +367,8 @@ async def _(
     """查询终末地抽卡记录"""
     from .commands.endfield import ef_gacha_history_handler
 
-    update = result.find("efgacha.update")
     await ef_gacha_history_handler(
-        user_session, session, begin, limit, target, bot, update, role_index=result.query("efgacha.role.role_index")
+        user_session, session, begin, limit, target, bot, role_index=result.query("efgacha.role.role_index")
     )
 
 

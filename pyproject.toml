@@ -11,7 +11,7 @@ dependencies = [
     "nonebot-plugin-alconna>=0.57.1",
     "nonebot-plugin-apscheduler>=0.5.0",
     "nonebot-plugin-argot>=0.2.1",
-    "nonebot-plugin-htmlrender>=0.6.5",
+    "nonebot-plugin-htmlrender[playwright]>=0.6.5",
     "nonebot-plugin-localstore>=0.7.3",
     "nonebot-plugin-orm>=0.7.6",
     "nonebot-plugin-user>=0.5.0",
@@ -39,8 +39,12 @@ dev = [
 ]
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["uv_build>=0.11.16,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "nonebot_plugin_skland"
+module-root = ""
 
 [tool.nonebot]
 plugins = ["nonebot_plugin_skland"]

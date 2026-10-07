@@ -7,7 +7,7 @@ def test_config_keeps_nonebot_nested_structure():
 
     cfg = Config()
     assert isinstance(cfg.skland, ScopedConfig)
-    assert cfg.skland.github_proxy_url == ""
+    assert cfg.skland.github_proxy_url == "https://gh-proxy.com/"
     assert cfg.skland.check_res_update is False
     assert cfg.skland.argot_expire == 300
 

@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_all_template_renderers_use_configured_timeout(app, mocker, monkeypatch):
+async def test_template_renderers_use_configured_timeout(app, mocker, monkeypatch):
     from nonebot_plugin_skland import render
     from nonebot_plugin_skland.config import config
 
@@ -38,7 +38,6 @@ async def test_all_template_renderers_use_configured_timeout(app, mocker, monkey
         gameUserInfo=object(),
         history=rogue_history,
     )
-    ef_gacha = SimpleNamespace(joint_pools=[])
     ef_card = SimpleNamespace(
         chars=[],
         config=SimpleNamespace(charIds=[]),
@@ -60,10 +59,9 @@ async def test_all_template_renderers_use_configured_timeout(app, mocker, monkey
     await render.render_rogue_info(rogue_data, "background.jpg", 1, False)
     await render.render_clue_board(object())
     await render.render_gacha_history(object(), object(), nickname="Doctor", channel_master_id="1")
-    await render.render_ef_gacha_history(ef_gacha, SimpleNamespace(avatarUrl=""), object())
     await render.render_ef_card(ef_card, "background.jpg")
 
-    assert template_renderer.await_count == 9
+    assert template_renderer.await_count == 8
     assert {call.kwargs["template_name"] for call in template_renderer.await_args_list} == {
         "operator_roster.html.jinja2",
         "bound_roles.html.jinja2",
@@ -72,7 +70,6 @@ async def test_all_template_renderers_use_configured_timeout(app, mocker, monkey
         "rogue_info.html.jinja2",
         "clue.html.jinja2",
         "gacha.html.jinja2",
-        "ef_gacha.html.jinja2",
         "endfield_card.html.jinja2",
     }
     bound_roles_call = next(
