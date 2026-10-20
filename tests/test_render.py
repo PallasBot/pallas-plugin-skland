@@ -56,7 +56,7 @@ async def test_template_renderers_use_configured_timeout(app, mocker, monkeypatc
     await render.render_bound_roles_card(object())
     await render.render_ark_card(ark_card, "background.jpg")
     await render.render_rogue_card(rogue_data, "background.jpg")
-    await render.render_rogue_info(rogue_data, "background.jpg", 1, False)
+    await render.render_rogue_info(rogue_data, "background.jpg", 1, object(), False)
     await render.render_clue_board(object())
     await render.render_gacha_history(object(), object(), nickname="Doctor", channel_master_id="1")
     await render.render_ef_card(ef_card, "background.jpg")

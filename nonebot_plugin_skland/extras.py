@@ -228,10 +228,10 @@ extra_data = {
                 "skland efcard -r <index>\n"
                 "```\n\n"
                 " **快捷指令** ：`ef`\n\n"
-                "查询终末地角色信息卡片。\n\n"
+                "查询终末地角色信息卡片，默认展示当前角色在森空岛展示配置中选择的干员。\n\n"
                 "**可选参数：**\n"
                 "- `-r <序号>` / `--role <序号>`：按终末地角色序号临时查询自己，不改默认\n"
-                "- `-a` / `--all`：展示所有角色（默认按森空岛配置过滤）\n"
+                "- `-a` / `--all`：展示当前角色的全部干员\n"
                 "- `-s` / `--simple`：使用简化背景\n"
             ),
         },
@@ -421,7 +421,7 @@ extra_data = {
             "command_permission": "skland.sync",
             "trigger_method": "**无限制**",
             "trigger_condition": "**资源更新** | `skland sync --data`",
-            "brief_des": "检查并更新游戏数据与卡池数据，不下载图片。",
+            "brief_des": "检查并更新游戏数据与卡池数据。",
             "detail_des": (
                 "-  **资源更新**\n\n"
                 "```bash\n"
@@ -440,7 +440,7 @@ extra_data = {
                 "```bash\n"
                 "skland sync --data\n"
                 "```\n\n"
-                "仅更新游戏数据资源（卡池数据、角色数据等）。\n\n"
+                "仅更新游戏数据资源（卡池数据、角色数据及终末地图片资源表等）。\n\n"
                 "- **强制更新**\n\n"
                 "```bash\n"
                 "skland sync --force\n"

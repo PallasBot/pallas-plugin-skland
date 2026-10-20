@@ -1,6 +1,7 @@
 from datetime import datetime
 from collections.abc import Callable
 
+from .schemas.arknights.rogue import Record
 from .image_cache import wait_for_page_resources
 from .config import RES_DIR, TEMPLATES_DIR, config
 from .compact import open_html_page, template_to_html
@@ -23,6 +24,7 @@ from .filters import (
     loads_json,
     format_date_ymd,
     get_domain_info,
+    ef_item_icon_url,
     format_money_wan,
     format_timestamp,
     get_rarity_color,
@@ -35,7 +37,6 @@ from .filters import (
     get_profession_icon,
     format_timestamp_str,
     charId_to_portraitUrl,
-    ef_charId_to_avatarUrl,
     format_war_echoes_date,
     get_equip_rarity_color,
     war_echoes_stage_asset,
@@ -162,15 +163,13 @@ async def render_rogue_card(props: RogueData, bg: BackgroundImage) -> bytes:
     )
 
 
-async def render_rogue_info(props: RogueData, bg: BackgroundImage, id: int, is_favored: bool) -> bytes:
+async def render_rogue_info(props: RogueData, bg: BackgroundImage, id: int, record: Record, is_favored: bool) -> bytes:
     return await template_to_pic(
         template_path=str(TEMPLATES_DIR),
         template_name="rogue_info.html.jinja2",
         templates={
             "id": id,
-            "record": props.history.favourRecords[id - 1]
-            if is_favored and id - 1 < len(props.history.favourRecords)
-            else (props.history.records[id - 1] if id - 1 < len(props.history.records) else None),
+            "record": record,
             "is_favored": is_favored,
             "background_image": background_to_uri(bg),
             "topic_img": props.topic_img,
@@ -255,7 +254,7 @@ async def render_ef_gacha_history(props: EfGachaView) -> list[bytes]:
         props=props,
         filters={
             "format_timestamp_md": format_timestamp_md,
-            "ef_charId_to_avatarUrl": ef_charId_to_avatarUrl,
+            "ef_item_icon_url": ef_item_icon_url,
         },
     )
     async with open_html_page(
