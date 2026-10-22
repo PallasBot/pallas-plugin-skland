@@ -4,8 +4,7 @@ import asyncio
 from pathlib import Path
 from itertools import islice
 from datetime import datetime
-from typing import Any, TypeVar
-from typing_extensions import Self
+from typing import Any, Self, TypeVar
 from urllib.parse import quote, urlsplit
 from collections.abc import Callable, Iterable
 

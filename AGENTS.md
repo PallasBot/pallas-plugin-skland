@@ -13,7 +13,7 @@
 
 ## 技术栈与关键依赖
 
-- **Python**: >= 3.10
+- **Python**: >= 3.11
 - **Bot 框架**: NoneBot2
 - **命令系统**: nonebot-plugin-alconna / arclet-alconna
 - **用户会话**: nonebot-plugin-user
@@ -439,7 +439,7 @@ async def run_daily_resource_update(): ...
 ### 代码风格
 
 - 行长度：120。
-- Python 目标版本：3.10。
+- Python 目标版本：3.11。
 - Ruff lint 规则在 `pyproject.toml` 的 `[tool.ruff.lint]`。
 - Pyright 使用 `typeCheckingMode = "standard"`。
 - 保持现有代码风格：异步函数、Pydantic 模型、NoneBot handler、短中文注释风格。
