@@ -112,7 +112,8 @@ nonebot_plugin_skland/
 │       └── gacha/
 │           ├── base.py       # EndfieldPoolType、角色/武器抽卡响应、Content API 模型
 │           ├── pool.py       # EfGachaPoolInfo、保底/歪卡/武库配额统计
-│           └── statistics.py # EfGroupedGachaRecord、分类统计、分页可见池计算
+│           ├── statistics.py # EfGroupedGachaRecord、完整分类统计与保底
+│           └── view.py       # EfGachaView 分类/期次投影与分页切片
 ├── migrations/          # nonebot-plugin-orm/Alembic 迁移脚本
 └── resources/
     ├── fonts/           # 渲染字体
@@ -250,6 +251,7 @@ class Config(BaseModel):
   - 默认角色属于用户和游戏，而不是某个森空岛账号。
 - `GachaRecord`
   - 通过 `character_id` 直接归属具体角色；`item_type` 区分 `char` / `weapon`，`is_free` 标记终末地免费抽。
+  - 可空 `pool_version` 保存终末地接口提供的卡池期次；历史未知期次保留为 `NULL`，不按名称或时间推断。
   - 唯一约束为 `character_id + gacha_ts + pos`，不同账号角色可保存相同时间与位置的记录。
 
 账号删除通过数据库/ORM 级联删除其角色、默认映射和抽卡记录。新增或修改模型后需要添加迁移脚本。
@@ -377,14 +379,17 @@ class Config(BaseModel):
 
 终末地：
 
-- `commands/endfield/gacha.py` 中 `EF_CHAR_POOL_TYPES` 包含 `STANDARD`、`SPECIAL`、`BEGINNER`、`JOINT`；武器池单独使用 `WEAPON`。
+- `schemas/endfield/gacha/base.py` 的 `EndfieldPoolType` 包含 `STANDARD`、`SPECIAL`、`BEGINNER`、`JOINT`、`RERUN` 和 `WEAPON`；`EndfieldCharPoolType` 将 `RERUN` 纳入角色池类型。
 - 武器抽卡响应中的 `kind="gift_weapon"` 是赠礼元数据，解析时过滤，不计入抽数、保底或数据库；角色抽卡响应只接受显式 `kind="draw"` 的条目，缺失 `kind` 的事件仍参与原始分页边界但不进入抽卡列表；仅武器旧格式允许省略 `kind`。
-- 两类响应都在模型校验前记录 `raw_page_size` 与 `raw_next_seq`，过滤后仍按原始页边界继续分页，避免漏抽或重复。
+- 响应模型在过滤前记录原始末项 `seqId`；`get_all_ef_gacha_records()` 按游标顺序读取，支持稀疏序号与仅含赠礼的页面，游标缺失或未前进时失败，不返回不完整历史。
 - `skland efgacha` 查询时自动同步所选角色的抽卡记录并去重保存；接口失败时使用本地历史缓存，并提示结果可能不是最新。
-- `services.gacha.get_all_ef_gacha_records()` 会并发分页获取终末地抽卡记录。
-- `services.gacha.group_ef_gacha_records()` 将记录分为 `beginner_pools`、`standard_pools`、`special_pools`、`joint_pools`、`weapon_pools`。
-- `EfGroupedGachaRecord` 负责各类统计：总抽数、六星平均抽数、保底、UP/歪卡、武库配额、可见卡池切片。限定池或武器池任一卡池缺少 UP 信息时，该类别歪卡数和 UP 平均均为 `None`，模板显示 `-`；各平均抽数只以付费六星为分母（UP 平均为付费 UP 六星），分母为零时为 `None`。
-- `render.render_ef_gacha_history()` 使用固定列布局；`-b` / `-l` 对各类别分别分页，统计说明只在首页显示。
+- 所有卡池类别并发同步；仅在完整获取成功后才写入。重复记录按角色、时间戳和序号去重；已存旧记录只在接口提供已知期次时回填 `pool_version`，不增加新增记录数。失败不会提交部分新记录或期次回填。
+- `EfGachaPoolInfo.pool_category` 是唯一分类来源：武器物品类型优先于池 ID 前缀，并兼容旧 `wepon` 命名。`group_ef_gacha_records()` 将历史分为 `beginner_pools`、`standard_pools`、`special_pools`、`rerun_pools`、`joint_pools` 和 `weapon_pools`；重构武器保留在武器数据中，但独立于普通武器统计。
+- 重构角色的 80 抽小保底在重构角色池间共享；同名池的首次 120 抽 UP 门槛、30/60/90 抽免费十连及每 240 抽 UP 信物进度跨期累计。免费抽不推进或重置付费保底。
+- 重构武器按每十件实际抽取还原申领批次；4 次申领小保底按期次独立，首次 8 次申领 UP 与第 10 次起的奖励进度按同名池跨期累计。未知期次或不完整申领批次不伪造进度或当期保底。
+- `EfGachaView.categories` 分别投影限定、重构角色、普通武器、重构武器、联合、常驻和新手统计；每类 `-b` / `-l` 独立切片但不改变完整统计。重构记录按 `pool_version` 分期，五星汇总不跨期，多金事件不拆分，分页前已计算好完整历史。
+- 限定、重构角色、武器类别任一卡池缺少 UP 信息时，相应歪卡数与 UP 平均为 `None`；平均只按付费六星（UP 平均按付费 UP 六星）计算，分母为零时为 `None`。
+- `render.render_ef_gacha_history()` 按类别分区自动分页；分页不改变累计统计或保底。
 - `skland efwar` 查询终末地战争回响赛季、荣勋和轮换战绩；`-s` 选择赛季，`-w` 选择轮换，`-r` 临时选择角色。
 
 ### 渲染系统
@@ -478,6 +483,7 @@ uv run pytest -s tests/test_skland_api.py
 - `tests/test_compact.py` 覆盖 htmlrender 旧版与 0.8.x API 兼容；`tests/test_help_metadata.py` 覆盖命令权限、快捷前缀和帮助分组元数据。
 - `tests/test_ef_gacha_joint_pool.py` 覆盖终末地联合寻访分类与统计（无六星时均值为空）。
 - `tests/test_ef_gacha_command.py` 覆盖默认同步、去重、先保存再渲染、显式缓存回退、接口解析失败的有/无缓存反馈、失败零部分写入、鉴权错误优先级、选角身份、有序发送，以及角色/武器的 `kind` 过滤差异与原始分页边界。
+- `tests/test_ef_gacha_rerun.py` 覆盖重构池分类、跨期保底和奖励、免费抽隔离、未知期次与残缺武器申领、分期展示；`tests/test_ef_gacha_migration.py` 覆盖期次迁移的数据保留。命令测试覆盖稀疏游标、纯赠礼页、旧记录期次回填和失败零部分提交。
 - `tests/test_ark_gacha_command.py` 覆盖方舟抽卡正负切片的分页边界、角色资料/渲染/发送失败后记录已保存，以及小黑盒导入遇到未知干员时零写入并列出名称。
 - `tests/test_ark_ap.py` 覆盖理智溢出保留、未满时的估算区间及回满时间已过的边界。
 - `tests/test_rogue_info.py` 覆盖战绩详情编号 0、负数、越界、列表为空及收藏不回退最近战绩，引用图片与 `-r` 两条路径一致。
@@ -540,7 +546,7 @@ nb orm revision -m "description" --branch-label "nonebot_plugin_skland"
 nb orm upgrade
 ```
 
-迁移脚本位于 `nonebot_plugin_skland/migrations/`。已有迁移包括初始表、抽卡记录表、`role_id`、模型类型修正、终末地抽卡支持和多账号身份重建；多账号 downgrade 在旧结构无法无损表达当前数据时必须拒绝执行。
+迁移脚本位于 `nonebot_plugin_skland/migrations/`。已有迁移包括初始表、抽卡记录表、`role_id`、模型类型修正、终末地抽卡支持、多账号身份重建和 `c8d95f314a62` 重构池期次；多账号 downgrade 在旧结构无法无损表达当前数据时必须拒绝执行。
 
 ## 添加新功能的一般流程
 
